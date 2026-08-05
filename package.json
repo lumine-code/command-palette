@@ -1,0 +1,62 @@
+{
+  "name": "command-palette",
+  "author": "lumine-code",
+  "version": "1.0.0",
+  "description": "Find and run available commands with fuzzy search.",
+  "keywords": [
+    "fuzzy",
+    "shortcut",
+    "action",
+    "dispatch",
+    "launcher",
+    "keybinding"
+  ],
+  "repository": "https://github.com/lumine-code/command-palette",
+  "bugs": {
+    "url": "https://github.com/lumine-code/command-palette/issues"
+  },
+  "license": "MIT",
+  "main": "./lib/main",
+  "engines": {
+    "lumine": "^1.0.0"
+  },
+  "backgroundTips": [
+    "Everything Lumine can do is in the Command Palette. See it by using {{ 'command-palette:toggle' | keystroke }}"
+  ],
+  "scripts": {
+    "test": "lumine --test spec",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "activationCommands": {
+    "atom-workspace": [
+      "command-palette:toggle",
+      "command-palette:show-hidden-commands",
+      "command-palette:clear-recent"
+    ]
+  },
+  "configSchema": {
+    "recentCount": {
+      "title": "Number of Recent Items",
+      "description": "How many recently used commands to keep at the top of the list.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 10
+    },
+    "preserveQuery": {
+      "title": "Preserve Query",
+      "description": "Keep the search query when reopening the command palette.",
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^18.2.2",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.6"
+  }
+}
