@@ -1,5 +1,12 @@
 {
-  "body, .command-palette atom-text-editor": {
+  // One block per selector rather than a comma list: calculateSpecificity
+  // truncates at the first comma, so `.command-palette atom-text-editor` was
+  // scored as `body`'s 1 instead of the 11 it earns.
+  "atom-workspace": {
+    "cmdorctrl-shift-p": "command-palette:toggle",
+    "f1": "command-palette:toggle"
+  },
+  ".command-palette atom-text-editor": {
     "cmdorctrl-shift-p": "command-palette:toggle",
     "f1": "command-palette:toggle"
   }
