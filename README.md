@@ -18,7 +18,7 @@ To install `command-palette` search for _command-palette_ in the Install pane of
 
 ## Commands
 
-Commands available in `atom-workspace`:
+Commands available in `lumine-workspace`:
 
 - `command-palette:toggle`: open or close the command palette,
 - `command-palette:show-hidden-commands`: open the palette listing only commands hidden from it,

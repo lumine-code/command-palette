@@ -36,7 +36,7 @@
     "format:check": "prettier --check ."
   },
   "activationCommands": {
-    "atom-workspace": [
+    "lumine-workspace": [
       "command-palette:toggle",
       "command-palette:show-hidden-commands",
       "command-palette:clear-recent"
