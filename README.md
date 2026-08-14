@@ -14,7 +14,7 @@ The palette lists every command available for the focused element, so it always 
 
 ## Installation
 
-To install `command-palette` search for _command-palette_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/command-palette`.
+To install `command-palette` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/command-palette`.
 
 ## Commands
 
