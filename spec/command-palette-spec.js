@@ -195,21 +195,15 @@ describe("command-palette", () => {
   });
 
   describe("query handling", () => {
-    it("resets the query on reopen by default", async () => {
+    it("resets the query on reopen, and restores it on request", async () => {
       const selectListView = await openPalette();
       selectListView.refs.queryEditor.setText("noop");
       palette.hide();
-      // The query is reset synchronously by the willShow hook.
+
       palette.show();
       expect(selectListView.getQuery()).toBe("");
-    });
 
-    it("preserves the query when preserveQuery is enabled", async () => {
-      lumine.config.set("command-palette.preserveQuery", true);
-      const selectListView = await openPalette();
-      selectListView.refs.queryEditor.setText("noop");
-      palette.hide();
-      palette.show();
+      selectListView.restoreQuery();
       expect(selectListView.getQuery()).toBe("noop");
     });
 
@@ -232,6 +226,8 @@ describe("command-palette", () => {
         "Include the commands hidden from the palette by their packages",
       );
       expect(toggleHidden.keystrokes).toEqual([]);
+      // It changes what the list shows rather than acting on the selected row.
+      expect(toggleHidden.scope).toBe("list");
 
       // Every action explains itself with more than a restated title.
       for (const action of actions) {
