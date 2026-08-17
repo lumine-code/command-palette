@@ -7,7 +7,9 @@ describe("command-palette", () => {
     commandDisposables = [];
     commandDisposables.push(
       lumine.commands.add("lumine-workspace", "command-palette-spec:noop", {
-        description: "A command with a description",
+        // The nonsense word is what makes a description-only query provable:
+        // nothing else in the registry can match it.
+        description: "A command with a description mentioning zzyzx.",
         didDispatch() {},
       }),
       lumine.commands.add("lumine-workspace", "command-palette-spec:hidden", {
@@ -91,7 +93,7 @@ describe("command-palette", () => {
       );
 
       expect(item.querySelector(".secondary-line").textContent).toBe(
-        "A command with a description",
+        "A command with a description mentioning zzyzx.",
       );
     });
   });
@@ -117,6 +119,60 @@ describe("command-palette", () => {
       const names = listedCommandNames();
       expect(names).toContain("command-palette-spec:noop");
       expect(names).not.toContain("command-palette-spec:hidden");
+    });
+  });
+
+  describe("command-palette:toggle-descriptions", () => {
+    const NOOP_SECONDARY = "li[data-event-name='command-palette-spec:noop'] .secondary-line";
+
+    function secondaryLine() {
+      return palette.selectListView.element.querySelector(NOOP_SECONDARY);
+    }
+
+    async function dispatchToggle() {
+      lumine.commands.dispatch(
+        palette.selectListView.refs.queryEditor.element,
+        "command-palette:toggle-descriptions",
+      );
+      await lumine.views.getNextUpdatePromise();
+    }
+
+    it("drops the secondary line and puts it back on a second dispatch", async () => {
+      await openPalette();
+      expect(secondaryLine()).not.toBeNull();
+
+      await dispatchToggle();
+      expect(palette.showDescriptions).toBe(false);
+      expect(secondaryLine()).toBeNull();
+
+      await dispatchToggle();
+      expect(palette.showDescriptions).toBe(true);
+      expect(secondaryLine()).not.toBeNull();
+    });
+
+    it("stops matching a description it no longer shows", async () => {
+      const selectListView = await openPalette();
+      selectListView.refs.queryEditor.setText("zzyzx");
+      await lumine.views.getNextUpdatePromise();
+      expect(listedCommandNames()).toContain("command-palette-spec:noop");
+
+      await dispatchToggle();
+      expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
+    });
+
+    it("shows the descriptions again on the next open, filter included", async () => {
+      const selectListView = await openPalette();
+      await dispatchToggle();
+      expect(palette.showDescriptions).toBe(false);
+      palette.hide();
+
+      await openPalette();
+      expect(palette.showDescriptions).toBe(true);
+      // The candidates carry the descriptions again, not just the rows: the
+      // reset marks the list stale, so reopening rebuilds it.
+      selectListView.refs.queryEditor.setText("zzyzx");
+      await lumine.views.getNextUpdatePromise();
+      expect(listedCommandNames()).toContain("command-palette-spec:noop");
     });
   });
 
@@ -223,11 +279,19 @@ describe("command-palette", () => {
       const toggleHidden = byCommand.get("command-palette:toggle-hidden-commands");
       expect(toggleHidden.name).toBe("Toggle Hidden Commands");
       expect(toggleHidden.description).toBe(
-        "Include the commands hidden from the palette by their packages",
+        "Include the commands hidden from the palette by their packages.",
       );
       expect(toggleHidden.keystrokes).toEqual([]);
       // It changes what the list shows rather than acting on the selected row.
       expect(toggleHidden.scope).toBe("list");
+
+      const toggleDescriptions = byCommand.get("command-palette:toggle-descriptions");
+      expect(toggleDescriptions.name).toBe("Toggle Descriptions");
+      expect(toggleDescriptions.description).toBe(
+        "Hide the command descriptions and leave them out of the search.",
+      );
+      expect(toggleDescriptions.keystrokes).toEqual([]);
+      expect(toggleDescriptions.scope).toBe("list");
 
       // Every action explains itself with more than a restated title.
       for (const action of actions) {
@@ -268,6 +332,28 @@ describe("command-palette", () => {
       const names = listedCommandNames();
       expect(names).toContain("command-palette-spec:hidden");
       expect(names).not.toContain("command-palette-spec:noop");
+    });
+
+    // `runItemAction` re-shows the palette before dispatching, so this is the
+    // path that would break if the description reset ran on every show.
+    it("hides the descriptions when run from the actions list", async () => {
+      await openPalette();
+      await palette.selectListView.showItemActions();
+
+      const actionsList = palette.selectListView.itemActionsList;
+      const index = actionsList.items.findIndex(
+        (item) => item.command === "command-palette:toggle-descriptions",
+      );
+      actionsList.selectIndex(index);
+      actionsList.confirmSelection();
+
+      expect(palette.showDescriptions).toBe(false);
+      await lumine.views.getNextUpdatePromise();
+      expect(
+        palette.selectListView.element.querySelector(
+          "li[data-event-name='command-palette-spec:noop'] .secondary-line",
+        ),
+      ).toBeNull();
     });
 
     it("toggles back to the visible commands on a second dispatch", async () => {
