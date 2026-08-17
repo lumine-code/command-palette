@@ -174,14 +174,14 @@ describe("command-palette", () => {
       expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
     });
 
-    it("is bound to f11 inside the palette", async () => {
+    it("is bound to ctrl-d inside the palette", async () => {
       const selectListView = await openPalette();
       const bindings = lumine.keymaps.findKeyBindings({
         target: selectListView.refs.queryEditor.element,
         command: "command-palette:toggle-descriptions",
       });
 
-      expect(bindings.map((binding) => binding.keystrokes)).toContain("f11");
+      expect(bindings.map((binding) => binding.keystrokes)).toContain("ctrl-d");
     });
   });
 
@@ -290,7 +290,7 @@ describe("command-palette", () => {
       expect(toggleHidden.description).toBe(
         "Include the commands hidden from the palette by their packages.",
       );
-      expect(toggleHidden.keystrokes).toEqual([]);
+      expect(toggleHidden.keystrokes).toEqual(["ctrl-h"]);
       // It changes what the list shows rather than acting on the selected row.
       expect(toggleHidden.scope).toBe("list");
 
@@ -299,7 +299,7 @@ describe("command-palette", () => {
       expect(toggleDescriptions.description).toBe(
         "Show each command's description, and match the query against it.",
       );
-      expect(toggleDescriptions.keystrokes).toEqual(["f11"]);
+      expect(toggleDescriptions.keystrokes).toEqual(["ctrl-d"]);
       expect(toggleDescriptions.scope).toBe("list");
 
       // Every action explains itself with more than a restated title.

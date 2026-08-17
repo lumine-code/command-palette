@@ -6,16 +6,17 @@
     "cmdorctrl-shift-p": "command-palette:toggle",
     "f1": "command-palette:toggle"
   },
+  // `ctrl-d` and `ctrl-h` need no `[mini]` and no specificity of their own:
+  // core binds both at `body` scope only — `core:delete` and `core:backspace`
+  // on darwin, `native!` inside a native input — and a binding on the palette's
+  // own editor is nearer the dispatch target than `body` is, which outranks
+  // specificity outright. They leave f11 to select-list:restore-query, the way
+  // it is in every other dialog, and they only hold the keys while the palette
+  // is open.
   ".command-palette lumine-text-editor": {
     "cmdorctrl-shift-p": "command-palette:toggle",
-    "f1": "command-palette:toggle"
-  },
-  // `[mini]` is load-bearing rather than decorative: core binds f11 to
-  // select-list:restore-query on `.select-list lumine-text-editor[mini]`, which
-  // scores 21, and the block above scores 11. Matching the 21 is what lets load
-  // order decide, and a package always loads after core. The palette therefore
-  // trades restore-query for this inside its own list, and nowhere else.
-  ".command-palette lumine-text-editor[mini]": {
-    "f11": "command-palette:toggle-descriptions"
+    "f1": "command-palette:toggle",
+    "ctrl-d": "command-palette:toggle-descriptions",
+    "ctrl-h": "command-palette:toggle-hidden-commands"
   }
 }
