@@ -9,5 +9,13 @@
   ".command-palette lumine-text-editor": {
     "cmdorctrl-shift-p": "command-palette:toggle",
     "f1": "command-palette:toggle"
+  },
+  // `[mini]` is load-bearing rather than decorative: core binds f11 to
+  // select-list:restore-query on `.select-list lumine-text-editor[mini]`, which
+  // scores 21, and the block above scores 11. Matching the 21 is what lets load
+  // order decide, and a package always loads after core. The palette therefore
+  // trades restore-query for this inside its own list, and nowhere else.
+  ".command-palette lumine-text-editor[mini]": {
+    "f11": "command-palette:toggle-descriptions"
   }
 }

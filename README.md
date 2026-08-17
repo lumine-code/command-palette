@@ -6,11 +6,11 @@ The palette lists every command available for the focused element, so it always 
 
 ## Features
 
-- **Fuzzy search**: filter commands by name, description, and tags with fuzzy matching.
+- **Fuzzy search**: filter commands by name and tags with fuzzy matching.
 - **Recent commands**: recently used commands stay on top of the list while the query is empty.
 - **Keybinding hints**: each command shows its current keybindings for the focused element.
 - **Hidden commands**: inspect commands excluded from the palette on demand.
-- **Compact rows**: hide the descriptions to scan the command names alone.
+- **Descriptions on demand**: the list opens on the names alone and explains them when asked.
 
 ## Installation
 
@@ -27,7 +27,7 @@ Commands available in `lumine-workspace`:
 Commands available in `.command-palette`, all listed with their keybindings in the item-actions list (F12):
 
 - `command-palette:toggle-hidden-commands`: include the commands hidden from the palette by their packages,
-- `command-palette:toggle-descriptions`: hide the command descriptions and leave them out of the search.
+- `command-palette:toggle-descriptions`: show each command's description, and match the query against it.
 
 ## Customization
 

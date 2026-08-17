@@ -86,15 +86,14 @@ describe("command-palette", () => {
       }
     });
 
-    it("renders command descriptions when the query has no match indices", async () => {
+    it("opens on the command names alone, descriptions withheld", async () => {
       await openPalette();
       const item = palette.selectListView.element.querySelector(
         "li[data-event-name='command-palette-spec:noop']",
       );
 
-      expect(item.querySelector(".secondary-line").textContent).toBe(
-        "A command with a description mentioning zzyzx.",
-      );
+      expect(palette.showDescriptions).toBe(false);
+      expect(item.querySelector(".secondary-line")).toBeNull();
     });
   });
 
@@ -137,42 +136,52 @@ describe("command-palette", () => {
       await lumine.views.getNextUpdatePromise();
     }
 
-    it("drops the secondary line and puts it back on a second dispatch", async () => {
+    it("adds the secondary line and takes it away again on a second dispatch", async () => {
       await openPalette();
-      expect(secondaryLine()).not.toBeNull();
-
-      await dispatchToggle();
-      expect(palette.showDescriptions).toBe(false);
       expect(secondaryLine()).toBeNull();
 
       await dispatchToggle();
       expect(palette.showDescriptions).toBe(true);
-      expect(secondaryLine()).not.toBeNull();
+      expect(secondaryLine().textContent).toBe("A command with a description mentioning zzyzx.");
+
+      await dispatchToggle();
+      expect(palette.showDescriptions).toBe(false);
+      expect(secondaryLine()).toBeNull();
     });
 
-    it("stops matching a description it no longer shows", async () => {
+    it("only matches a description once it is on screen", async () => {
       const selectListView = await openPalette();
       selectListView.refs.queryEditor.setText("zzyzx");
       await lumine.views.getNextUpdatePromise();
-      expect(listedCommandNames()).toContain("command-palette-spec:noop");
+      expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
 
       await dispatchToggle();
-      expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
+      expect(listedCommandNames()).toContain("command-palette-spec:noop");
     });
 
-    it("shows the descriptions again on the next open, filter included", async () => {
+    it("goes back to the names alone on the next open, filter included", async () => {
       const selectListView = await openPalette();
       await dispatchToggle();
-      expect(palette.showDescriptions).toBe(false);
+      expect(palette.showDescriptions).toBe(true);
       palette.hide();
 
       await openPalette();
-      expect(palette.showDescriptions).toBe(true);
-      // The candidates carry the descriptions again, not just the rows: the
+      expect(palette.showDescriptions).toBe(false);
+      // The candidates dropped the descriptions again, not just the rows: the
       // reset marks the list stale, so reopening rebuilds it.
       selectListView.refs.queryEditor.setText("zzyzx");
       await lumine.views.getNextUpdatePromise();
-      expect(listedCommandNames()).toContain("command-palette-spec:noop");
+      expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
+    });
+
+    it("is bound to f11 inside the palette", async () => {
+      const selectListView = await openPalette();
+      const bindings = lumine.keymaps.findKeyBindings({
+        target: selectListView.refs.queryEditor.element,
+        command: "command-palette:toggle-descriptions",
+      });
+
+      expect(bindings.map((binding) => binding.keystrokes)).toContain("f11");
     });
   });
 
@@ -288,9 +297,9 @@ describe("command-palette", () => {
       const toggleDescriptions = byCommand.get("command-palette:toggle-descriptions");
       expect(toggleDescriptions.name).toBe("Toggle Descriptions");
       expect(toggleDescriptions.description).toBe(
-        "Hide the command descriptions and leave them out of the search.",
+        "Show each command's description, and match the query against it.",
       );
-      expect(toggleDescriptions.keystrokes).toEqual([]);
+      expect(toggleDescriptions.keystrokes).toEqual(["f11"]);
       expect(toggleDescriptions.scope).toBe("list");
 
       // Every action explains itself with more than a restated title.
@@ -336,7 +345,7 @@ describe("command-palette", () => {
 
     // `runItemAction` re-shows the palette before dispatching, so this is the
     // path that would break if the description reset ran on every show.
-    it("hides the descriptions when run from the actions list", async () => {
+    it("shows the descriptions when run from the actions list", async () => {
       await openPalette();
       await palette.selectListView.showItemActions();
 
@@ -347,13 +356,13 @@ describe("command-palette", () => {
       actionsList.selectIndex(index);
       actionsList.confirmSelection();
 
-      expect(palette.showDescriptions).toBe(false);
+      expect(palette.showDescriptions).toBe(true);
       await lumine.views.getNextUpdatePromise();
       expect(
         palette.selectListView.element.querySelector(
           "li[data-event-name='command-palette-spec:noop'] .secondary-line",
         ),
-      ).toBeNull();
+      ).not.toBeNull();
     });
 
     it("toggles back to the visible commands on a second dispatch", async () => {
