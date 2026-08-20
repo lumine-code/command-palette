@@ -27,7 +27,8 @@ Commands available in `lumine-workspace`:
 Commands available in `.command-palette`, all listed with their keybindings in the item-actions list (F12):
 
 - `command-palette:toggle-hidden-commands`: include the commands hidden from the palette by their packages,
-- `command-palette:toggle-descriptions`: show each command's description, and match the query against it.
+- `command-palette:toggle-descriptions`: show each command's description, and match the query against it,
+- `command-palette:remove-from-recent`: drop the selected command from the recent section, offered only while a recent one is selected.
 
 ## Customization
 

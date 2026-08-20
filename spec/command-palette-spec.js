@@ -216,6 +216,38 @@ describe("command-palette", () => {
       expect(dispatched).toBe(true);
     });
 
+    it("drops one command from the section without closing the palette", async () => {
+      const selectList = await openPalette();
+      const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
+      palette.recordRecent(item);
+      await selectList.update({});
+      await selectList.selectItem(item);
+
+      lumine.commands.dispatch(selectList.element, "command-palette:remove-from-recent");
+      await lumine.views.getNextUpdatePromise();
+
+      expect(palette.recentlyUsed).toEqual([]);
+      expect(selectList.isVisible()).toBe(true);
+      expect(selectList.getSelectedItem().name).toBe("command-palette-spec:noop");
+    });
+
+    it("offers the action only while a recent command is selected", async () => {
+      const selectList = await openPalette();
+      const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
+      const other = palette.commands.find((command) => command.name !== item.name);
+      palette.recordRecent(item);
+      await selectList.update({});
+
+      await selectList.selectItem(item);
+      let actions = selectList.itemActions().map((action) => action.command);
+      expect(actions).toContain("command-palette:remove-from-recent");
+
+      await selectList.selectItem(other);
+      actions = selectList.itemActions().map((action) => action.command);
+      expect(actions).not.toContain("command-palette:remove-from-recent");
+      expect(actions).toContain("command-palette:toggle-descriptions");
+    });
+
     it("caps the list at the configured recent count", async () => {
       lumine.config.set("command-palette.recentCount", 2);
       await openPalette();
