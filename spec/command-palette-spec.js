@@ -216,6 +216,35 @@ describe("command-palette", () => {
       expect(dispatched).toBe(true);
     });
 
+    it("runs the selected command through its semantic action exactly once", async () => {
+      let dispatchCount = 0;
+      commandDisposables.push(
+        lumine.commands.add("lumine-workspace", "command-palette-spec:run-once", {
+          didDispatch() {
+            dispatchCount++;
+          },
+        }),
+      );
+      palette.lastActiveElement = null;
+      const selectList = await openPalette();
+      const item = palette.commands.find(
+        (command) => command.name === "command-palette-spec:run-once",
+      );
+      await selectList.selectItem(item);
+
+      await selectList.showItemActions();
+      const actionsList = selectList.itemActionsList;
+      const index = actionsList.items.findIndex(
+        (action) => action.command === "command-palette:run-selected-command",
+      );
+      actionsList.selectIndex(index);
+      actionsList.confirmSelection();
+
+      expect(dispatchCount).toBe(1);
+      expect(palette.recentlyUsed[0]).toBe("command-palette-spec:run-once");
+      expect(selectList.isVisible()).toBe(false);
+    });
+
     it("drops one command from the section without closing the palette", async () => {
       const selectList = await openPalette();
       const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
@@ -314,8 +343,18 @@ describe("command-palette", () => {
 
   describe("item actions", () => {
     it("derives its actions from the command registration", () => {
+      spyOn(palette.selectListView, "getSelectedItem").and.returnValue({
+        name: "command-palette-spec:noop",
+      });
       const actions = palette.selectListView.itemActions();
       const byCommand = new Map(actions.map((action) => [action.command, action]));
+
+      const runSelected = byCommand.get("command-palette:run-selected-command");
+      expect(runSelected.name).toBe("Run Selected Command");
+      expect(runSelected.description).toBe(
+        "Run the selected command on the surface that opened the palette.",
+      );
+      expect(runSelected.keystrokes).toEqual(["enter"]);
 
       const toggleHidden = byCommand.get("command-palette:toggle-hidden-commands");
       expect(toggleHidden.name).toBe("Toggle Hidden Commands");
@@ -346,6 +385,21 @@ describe("command-palette", () => {
       expect(byCommand.has("command-palette:toggle")).toBe(false);
       expect(byCommand.has("command-palette:show-hidden-commands")).toBe(false);
       expect(byCommand.has("command-palette:clear-recent")).toBe(false);
+    });
+
+    it("keeps clear recent available without a match while history exists", async () => {
+      const selectList = await openPalette();
+      palette.recentlyUsed = ["command-palette-spec:noop"];
+      selectList.refs.queryEditor.setText("no-command-can-match-this-query-zzyzx");
+      await lumine.views.getNextUpdatePromise();
+
+      const actions = selectList.itemActions();
+      const byCommand = new Map(actions.map((action) => [action.command, action]));
+      expect(selectList.getSelectedItem()).toBeUndefined();
+      expect(byCommand.has("command-palette:run-selected-command")).toBe(false);
+      expect(byCommand.get("command-palette:clear-recent").scope).toBe("list");
+      expect(byCommand.has("command-palette:toggle-hidden-commands")).toBe(true);
+      expect(byCommand.has("command-palette:toggle-descriptions")).toBe(true);
     });
 
     it("shows the actions as a flow step and toggles the hidden commands", async () => {
