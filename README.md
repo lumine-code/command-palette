@@ -24,7 +24,7 @@ Commands available in `lumine-workspace`:
 - `command-palette:show-hidden-commands`: open the palette listing only commands hidden from it,
 - `command-palette:clear-recent`: forget the recently used commands.
 
-Commands available in `.command-palette`, all listed with their keybindings in the item-actions list (F12):
+Commands available in `.command-palette`:
 
 - `command-palette:toggle-hidden-commands`: include the commands hidden from the palette by their packages,
 - `command-palette:toggle-descriptions`: show each command's description, and match the query against it,
