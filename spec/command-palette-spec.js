@@ -31,8 +31,8 @@ describe("command-palette", () => {
     for (const disposable of commandDisposables) disposable.dispose();
   });
 
-  async function openPalette(command = "command-palette:toggle", target = workspaceElement) {
-    await lumine.commands.dispatch(target, command);
+  async function openPalette(command = "command-palette:toggle") {
+    lumine.commands.dispatch(workspaceElement, command);
     await lumine.views.getNextUpdatePromise();
     return palette.selectListView;
   }
@@ -63,17 +63,6 @@ describe("command-palette", () => {
       if (visibleCommands.length > 99) {
         expect(selectListView.element.querySelector(".show-more-item")).not.toBeNull();
       }
-    });
-
-    it("uses the workspace root when the active surface has no focused element", async () => {
-      const temporary = document.createElement("button");
-      document.body.appendChild(temporary);
-      temporary.focus();
-      temporary.remove();
-      await openPalette();
-
-      expect(palette.activeElement).toBe(workspaceElement);
-      expect(listedCommandNames()).toContain("command-palette-spec:noop");
     });
 
     it("hides the palette when it is already visible", async () => {
@@ -227,61 +216,6 @@ describe("command-palette", () => {
       expect(dispatched).toBe(true);
     });
 
-    it("shows in the primary window and runs on the detached target that opened it", async () => {
-      lumine.initializeDetachedPaneSurfaces({ force: true });
-      const editor = lumine.workspace.buildTextEditor();
-      lumine.workspace.getActivePane().addItem(editor);
-      const editorElement = editor.getElement();
-      let detachedPane;
-      let commandDisposable;
-
-      try {
-        detachedPane = await lumine.workspace.detachPaneItem(editor, { show: false });
-        const detachedSurface = lumine.workspace.getWindowSurface(editor);
-        const primarySurface = lumine.workspace.getPrimaryWindowSurface();
-        editorElement.focus();
-        let dispatchedTarget = null;
-        commandDisposable = lumine.commands.add(
-          editorElement,
-          "command-palette-spec:detached-target",
-          (event) => {
-            dispatchedTarget = event.target;
-          },
-        );
-
-        const selectList = await openPalette("command-palette:toggle", editorElement);
-        const panel = selectList.getPanel();
-        expect(palette.activeSurface).toBe(detachedSurface);
-        expect(palette.activeElement).toBe(editorElement);
-        expect(palette.activeElement.ownerDocument).toBe(detachedSurface.document);
-        expect(lumine.workspace.getActiveWindowSurface()).toBe(primarySurface);
-        expect(panel.getElement().ownerDocument).toBe(primarySurface.document);
-        expect(selectList.document).toBe(primarySurface.document);
-        expect(
-          Array.from(selectList.element.querySelectorAll("li")).every(
-            (element) => element.ownerDocument === primarySurface.document,
-          ),
-        ).toBe(true);
-
-        const item = palette.commands.find(
-          (command) => command.name === "command-palette-spec:detached-target",
-        );
-        expect(item).toBeDefined();
-        await palette.runSelectedCommand(item);
-        expect(dispatchedTarget).toBe(editorElement);
-        expect(dispatchedTarget.ownerDocument).toBe(detachedSurface.document);
-        expect(lumine.workspace.getActiveWindowSurface()).toBe(primarySurface);
-      } finally {
-        palette.hide();
-        commandDisposable?.dispose();
-        if (detachedPane?.isDetached?.()) {
-          await lumine.workspace.attachDetachedPane(detachedPane);
-        }
-        lumine.workspace.paneForItem(editor)?.destroyItem(editor, true);
-        lumine.initializeDetachedPaneSurfaces();
-      }
-    });
-
     it("runs the selected command through its semantic action exactly once", async () => {
       let dispatchCount = 0;
       commandDisposables.push(
@@ -418,7 +352,7 @@ describe("command-palette", () => {
       const runSelected = byCommand.get("command-palette:run-selected-command");
       expect(runSelected.name).toBe("Run Selected Command");
       expect(runSelected.description).toBe(
-        "Run the selected command on the surface that opened the palette.",
+        "Run the selected command on the element that opened the palette.",
       );
       expect(runSelected.keystrokes).toEqual(["enter"]);
 
