@@ -227,7 +227,7 @@ describe("command-palette", () => {
       expect(dispatched).toBe(true);
     });
 
-    it("runs a command on the detached target that opened the palette", async () => {
+    it("shows in the primary window and runs on the detached target that opened it", async () => {
       lumine.initializeDetachedPaneSurfaces({ force: true });
       const editor = lumine.workspace.buildTextEditor();
       lumine.workspace.getActivePane().addItem(editor);
@@ -237,7 +237,8 @@ describe("command-palette", () => {
 
       try {
         detachedPane = await lumine.workspace.detachPaneItem(editor, { show: false });
-        const surface = lumine.workspace.getWindowSurface(editor);
+        const detachedSurface = lumine.workspace.getWindowSurface(editor);
+        const primarySurface = lumine.workspace.getPrimaryWindowSurface();
         editorElement.focus();
         let dispatchedTarget = null;
         commandDisposable = lumine.commands.add(
@@ -250,13 +251,15 @@ describe("command-palette", () => {
 
         const selectList = await openPalette("command-palette:toggle", editorElement);
         const panel = selectList.getPanel();
-        expect(palette.activeSurface).toBe(surface);
-        expect(palette.activeElement.ownerDocument).toBe(surface.document);
-        expect(panel.getElement().ownerDocument).toBe(surface.document);
-        expect(selectList.document).toBe(surface.document);
+        expect(palette.activeSurface).toBe(detachedSurface);
+        expect(palette.activeElement).toBe(editorElement);
+        expect(palette.activeElement.ownerDocument).toBe(detachedSurface.document);
+        expect(lumine.workspace.getActiveWindowSurface()).toBe(primarySurface);
+        expect(panel.getElement().ownerDocument).toBe(primarySurface.document);
+        expect(selectList.document).toBe(primarySurface.document);
         expect(
           Array.from(selectList.element.querySelectorAll("li")).every(
-            (element) => element.ownerDocument === surface.document,
+            (element) => element.ownerDocument === primarySurface.document,
           ),
         ).toBe(true);
 
@@ -265,15 +268,9 @@ describe("command-palette", () => {
         );
         expect(item).toBeDefined();
         await palette.runSelectedCommand(item);
-        expect(dispatchedTarget.ownerDocument).toBe(surface.document);
-
-        await lumine.workspace.attachDetachedPane(detachedPane);
-        detachedPane = null;
-        editorElement.focus();
-        await openPalette("command-palette:toggle", editorElement);
-        expect(selectList.getPanel()).toBe(panel);
-        expect(panel.getElement().ownerDocument).toBe(document);
-        expect(palette.activeElement.ownerDocument).toBe(document);
+        expect(dispatchedTarget).toBe(editorElement);
+        expect(dispatchedTarget.ownerDocument).toBe(detachedSurface.document);
+        expect(lumine.workspace.getActiveWindowSurface()).toBe(primarySurface);
       } finally {
         palette.hide();
         commandDisposable?.dispose();
