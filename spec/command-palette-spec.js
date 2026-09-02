@@ -130,7 +130,7 @@ describe("command-palette", () => {
 
     async function dispatchToggle() {
       lumine.commands.dispatch(
-        palette.selectListView.refs.queryEditor.element,
+        palette.selectListView.getQueryEditor().element,
         "command-palette:toggle-descriptions",
       );
       await lumine.views.getNextUpdatePromise();
@@ -151,7 +151,7 @@ describe("command-palette", () => {
 
     it("only matches a description once it is on screen", async () => {
       const selectListView = await openPalette();
-      selectListView.refs.queryEditor.setText("zzyzx");
+      selectListView.getQueryEditor().setText("zzyzx");
       await lumine.views.getNextUpdatePromise();
       expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
 
@@ -169,7 +169,7 @@ describe("command-palette", () => {
       expect(palette.showDescriptions).toBe(false);
       // The candidates dropped the descriptions again, not just the rows: the
       // reset marks the list stale, so reopening rebuilds it.
-      selectListView.refs.queryEditor.setText("zzyzx");
+      selectListView.getQueryEditor().setText("zzyzx");
       await lumine.views.getNextUpdatePromise();
       expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
     });
@@ -177,7 +177,7 @@ describe("command-palette", () => {
     it("is bound to ctrl-d inside the palette", async () => {
       const selectListView = await openPalette();
       const bindings = lumine.keymaps.findKeyBindings({
-        target: selectListView.refs.queryEditor.element,
+        target: selectListView.getQueryEditor().element,
         command: "command-palette:toggle-descriptions",
       });
 
@@ -297,7 +297,7 @@ describe("command-palette", () => {
       expect(separator.nextElementSibling.dataset.eventName).toBeTruthy();
       expect(listedCommandNames()[0]).toBe("command-palette-spec:noop");
 
-      selectListView.refs.queryEditor.setText("noop");
+      selectListView.getQueryEditor().setText("noop");
       await lumine.views.getNextUpdatePromise();
       expect(selectListView.element.querySelector(".select-list-separator")).toBeNull();
     });
@@ -323,7 +323,7 @@ describe("command-palette", () => {
   describe("query handling", () => {
     it("resets the query on reopen, and restores it on request", async () => {
       const selectListView = await openPalette();
-      selectListView.refs.queryEditor.setText("noop");
+      selectListView.getQueryEditor().setText("noop");
       palette.hide();
 
       palette.show();
@@ -335,7 +335,7 @@ describe("command-palette", () => {
 
     it("matches spaced display names when the query uses hyphens", async () => {
       const selectListView = await openPalette();
-      selectListView.refs.queryEditor.setText("palette-spec-noop");
+      selectListView.getQueryEditor().setText("palette-spec-noop");
       await lumine.views.getNextUpdatePromise();
       expect(listedCommandNames()).toEqual(["command-palette-spec:noop"]);
     });
@@ -390,7 +390,7 @@ describe("command-palette", () => {
     it("keeps clear recent available without a match while history exists", async () => {
       const selectList = await openPalette();
       palette.recentlyUsed = ["command-palette-spec:noop"];
-      selectList.refs.queryEditor.setText("no-command-can-match-this-query-zzyzx");
+      selectList.getQueryEditor().setText("no-command-can-match-this-query-zzyzx");
       await lumine.views.getNextUpdatePromise();
 
       const actions = selectList.itemActions();
@@ -453,7 +453,7 @@ describe("command-palette", () => {
 
     it("toggles back to the visible commands on a second dispatch", async () => {
       const selectListView = await openPalette();
-      const queryElement = selectListView.refs.queryEditor.element;
+      const queryElement = selectListView.getQueryEditor().element;
 
       lumine.commands.dispatch(queryElement, "command-palette:toggle-hidden-commands");
       await lumine.views.getNextUpdatePromise();
