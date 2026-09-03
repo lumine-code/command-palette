@@ -20,25 +20,26 @@ describe("command-palette", () => {
     // The package defers activation until one of its commands is dispatched,
     // so trigger it with the side-effect-free clear-recent command.
     const activation = lumine.packages.activatePackage("command-palette");
-    lumine.commands.dispatch(workspaceElement, "command-palette:clear-recent");
+    const clearRecent = lumine.commands.dispatch(workspaceElement, "command-palette:clear-recent");
     const pack = await activation;
+    await clearRecent;
     mainModule = pack.mainModule;
     palette = mainModule.list;
   });
 
-  afterEach(() => {
-    palette?.hide();
+  afterEach(async () => {
+    await lumine.packages.deactivatePackage("command-palette");
     for (const disposable of commandDisposables) disposable.dispose();
   });
 
   async function openPalette(command = "command-palette:toggle") {
-    lumine.commands.dispatch(workspaceElement, command);
+    await lumine.commands.dispatch(workspaceElement, command);
     await lumine.views.getNextUpdatePromise();
     return palette.selectListView;
   }
 
   function listedCommandNames() {
-    const items = palette.selectListView.element.querySelectorAll("li[data-event-name]");
+    const items = palette.selectListView.getElement().querySelectorAll("li[data-event-name]");
     return Array.from(items, (li) => li.dataset.eventName);
   }
 
@@ -55,28 +56,50 @@ describe("command-palette", () => {
         .filter((command) => !command.hiddenInCommandPalette);
       // Every available command is in the list; the view renders them in
       // 99-row batches behind the library's Show more row.
-      expect(selectListView.props.items.length).toBe(visibleCommands.length);
+      expect(selectListView.getItems().length).toBe(visibleCommands.length);
       expect(
-        selectListView.props.items.some((command) => command.name === "command-palette-spec:noop"),
+        selectListView.getItems().some((command) => command.name === "command-palette-spec:noop"),
       ).toBe(true);
       expect(names.length).toBe(Math.min(visibleCommands.length, 99));
       if (visibleCommands.length > 99) {
-        expect(selectListView.element.querySelector(".show-more-item")).not.toBeNull();
+        expect(selectListView.getElement().querySelector(".show-more-item")).not.toBeNull();
       }
+    });
+
+    it("loads every command presentation in one registry batch", () => {
+      const visible = { name: "command-palette-spec:visible" };
+      const hidden = { name: "command-palette-spec:hidden", hiddenInCommandPalette: true };
+      const batch = spyOn(lumine.commands, "getCommandPresentations").and.returnValue([
+        visible,
+        hidden,
+      ]);
+      spyOn(lumine.commands, "findCommands").and.throwError("used the unbatched command lookup");
+      spyOn(lumine.commands, "getCommandPresentation").and.throwError(
+        "used the single-command presentation lookup",
+      );
+      palette.activeElement = workspaceElement;
+      palette.showHiddenCommands = false;
+
+      expect(palette.loadCommands()).toEqual([visible]);
+      expect(batch.calls.count()).toBe(1);
+      expect(batch).toHaveBeenCalledWith({
+        target: workspaceElement,
+        bindingTarget: workspaceElement,
+      });
     });
 
     it("hides the palette when it is already visible", async () => {
       const selectListView = await openPalette();
       expect(selectListView.isVisible()).toBe(true);
-      lumine.commands.dispatch(workspaceElement, "command-palette:toggle");
+      await lumine.commands.dispatch(workspaceElement, "command-palette:toggle");
       expect(selectListView.isVisible()).toBe(false);
     });
 
     it("shows the keybindings bound to the listed commands", async () => {
       await openPalette();
-      const toggleItem = palette.selectListView.element.querySelector(
-        "li[data-event-name='command-palette:toggle']",
-      );
+      const toggleItem = palette.selectListView
+        .getElement()
+        .querySelector("li[data-event-name='command-palette:toggle']");
       expect(toggleItem).not.toBeNull();
       const binding = lumine.keymaps
         .findKeyBindings({ target: workspaceElement })
@@ -88,9 +111,9 @@ describe("command-palette", () => {
 
     it("opens on the command names alone, descriptions withheld", async () => {
       await openPalette();
-      const item = palette.selectListView.element.querySelector(
-        "li[data-event-name='command-palette-spec:noop']",
-      );
+      const item = palette.selectListView
+        .getElement()
+        .querySelector("li[data-event-name='command-palette-spec:noop']");
 
       expect(palette.showDescriptions).toBe(false);
       expect(item.querySelector(".secondary-line")).toBeNull();
@@ -125,11 +148,11 @@ describe("command-palette", () => {
     const NOOP_SECONDARY = "li[data-event-name='command-palette-spec:noop'] .secondary-line";
 
     function secondaryLine() {
-      return palette.selectListView.element.querySelector(NOOP_SECONDARY);
+      return palette.selectListView.getElement().querySelector(NOOP_SECONDARY);
     }
 
     async function dispatchToggle() {
-      lumine.commands.dispatch(
+      await lumine.commands.dispatch(
         palette.selectListView.getQueryEditor().element,
         "command-palette:toggle-descriptions",
       );
@@ -187,12 +210,13 @@ describe("command-palette", () => {
 
   describe("recently used commands", () => {
     it("records confirmed commands and serializes them", async () => {
-      await openPalette();
+      const selectList = await openPalette();
       const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
       expect(item).toBeDefined();
-      palette.selectListView.props.didConfirmSelection(item);
+      await selectList.selectItem(item);
+      await selectList.confirmSelection();
 
-      expect(palette.recentlyUsed[0]).toBe("command-palette-spec:noop");
+      expect(selectList.getRecentItemIds()[0]).toBe("command-palette-spec:noop");
       expect(mainModule.serialize()).toEqual({ recentlyUsed: ["command-palette-spec:noop"] });
     });
 
@@ -205,14 +229,13 @@ describe("command-palette", () => {
           },
         }),
       );
-      // Focus a fresh element so the cached command list is recomputed.
-      palette.lastActiveElement = null;
-      await openPalette();
+      const selectList = await openPalette();
       const item = palette.commands.find(
         (command) => command.name === "command-palette-spec:confirm-me",
       );
       expect(item).toBeDefined();
-      palette.selectListView.props.didConfirmSelection(item);
+      await selectList.selectItem(item);
+      await selectList.confirmSelection();
       expect(dispatched).toBe(true);
     });
 
@@ -225,37 +248,30 @@ describe("command-palette", () => {
           },
         }),
       );
-      palette.lastActiveElement = null;
       const selectList = await openPalette();
       const item = palette.commands.find(
         (command) => command.name === "command-palette-spec:run-once",
       );
       await selectList.selectItem(item);
 
-      await selectList.showItemActions();
-      const actionsList = selectList.itemActionsList;
-      const index = actionsList.items.findIndex(
-        (action) => action.command === "command-palette:run-selected-command",
-      );
-      actionsList.selectIndex(index);
-      actionsList.confirmSelection();
+      await selectList.showActions();
+      const actionsList = workspaceElement.querySelector(".select-list-actions");
+      await lumine.commands.dispatch(actionsList, "command-palette:run-selected-command");
 
       expect(dispatchCount).toBe(1);
-      expect(palette.recentlyUsed[0]).toBe("command-palette-spec:run-once");
+      expect(selectList.getRecentItemIds()[0]).toBe("command-palette-spec:run-once");
       expect(selectList.isVisible()).toBe(false);
     });
 
     it("drops one command from the section without closing the palette", async () => {
       const selectList = await openPalette();
       const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
-      palette.recordRecent(item);
-      await selectList.update({});
+      await selectList.recordRecentItem(item);
       await selectList.selectItem(item);
 
-      lumine.commands.dispatch(selectList.element, "command-palette:remove-from-recent");
-      await lumine.views.getNextUpdatePromise();
+      await selectList.runAction("select-list:remove-recent");
 
-      expect(palette.recentlyUsed).toEqual([]);
+      expect(selectList.getRecentItemIds()).toEqual([]);
       expect(selectList.isVisible()).toBe(true);
       expect(selectList.getSelectedItem().name).toBe("command-palette-spec:noop");
     });
@@ -264,58 +280,56 @@ describe("command-palette", () => {
       const selectList = await openPalette();
       const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
       const other = palette.commands.find((command) => command.name !== item.name);
-      palette.recordRecent(item);
-      await selectList.update({});
+      await selectList.recordRecentItem(item);
 
       await selectList.selectItem(item);
-      let actions = selectList.itemActions().map((action) => action.command);
-      expect(actions).toContain("command-palette:remove-from-recent");
+      let actions = selectList.getAvailableActions().map((action) => action.command);
+      expect(actions).toContain("select-list:remove-recent");
 
       await selectList.selectItem(other);
-      actions = selectList.itemActions().map((action) => action.command);
-      expect(actions).not.toContain("command-palette:remove-from-recent");
+      actions = selectList.getAvailableActions().map((action) => action.command);
+      expect(actions).not.toContain("select-list:remove-recent");
       expect(actions).toContain("command-palette:toggle-descriptions");
     });
 
     it("caps the list at the configured recent count", async () => {
       lumine.config.set("command-palette.recentCount", 2);
-      await openPalette();
-      for (const name of ["a", "b", "c"]) {
-        palette.selectListView.props.didConfirmSelection({ name: `command-palette-spec:${name}` });
-      }
-      expect(palette.recentlyUsed).toEqual(["command-palette-spec:c", "command-palette-spec:b"]);
+      const selectList = await openPalette();
+      const items = selectList.getItems().slice(0, 3);
+      for (const item of items) await selectList.recordRecentItem(item);
+      expect(selectList.getRecentItemIds()).toEqual([items[2].name, items[1].name]);
     });
 
     it("separates recent commands from the rest of the rendered list", async () => {
-      await openPalette();
+      const selectList = await openPalette();
       const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
-      palette.selectListView.props.didConfirmSelection(item);
+      await selectList.recordRecentItem(item);
 
       const selectListView = await openPalette();
-      const separator = selectListView.element.querySelector(".select-list-separator");
+      const separator = selectListView.getElement().querySelector(".select-list-separator");
       expect(separator.previousElementSibling.dataset.eventName).toBe("command-palette-spec:noop");
       expect(separator.nextElementSibling.dataset.eventName).toBeTruthy();
       expect(listedCommandNames()[0]).toBe("command-palette-spec:noop");
 
       selectListView.getQueryEditor().setText("noop");
       await lumine.views.getNextUpdatePromise();
-      expect(selectListView.element.querySelector(".select-list-separator")).toBeNull();
+      expect(selectListView.getElement().querySelector(".select-list-separator")).toBeNull();
     });
 
     it("clears the list with command-palette:clear-recent", async () => {
-      await openPalette();
+      const selectList = await openPalette();
       const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
-      palette.selectListView.props.didConfirmSelection(item);
-      expect(palette.recentlyUsed.length).toBe(1);
+      await selectList.recordRecentItem(item);
+      expect(selectList.getRecentItemIds().length).toBe(1);
 
-      lumine.commands.dispatch(workspaceElement, "command-palette:clear-recent");
-      expect(palette.recentlyUsed).toEqual([]);
+      await lumine.commands.dispatch(workspaceElement, "command-palette:clear-recent");
+      expect(selectList.getRecentItemIds()).toEqual([]);
     });
 
     it("restores recently used commands from serialized state", async () => {
       const CommandPalette = require("../lib/list");
       const restored = new CommandPalette(["command-palette-spec:noop"]);
-      expect(restored.recentlyUsed).toEqual(["command-palette-spec:noop"]);
+      expect(restored.selectListView.getRecentItemIds()).toEqual(["command-palette-spec:noop"]);
       await restored.destroy();
     });
   });
@@ -342,11 +356,11 @@ describe("command-palette", () => {
   });
 
   describe("item actions", () => {
-    it("derives its actions from the command registration", () => {
-      spyOn(palette.selectListView, "getSelectedItem").and.returnValue({
-        name: "command-palette-spec:noop",
-      });
-      const actions = palette.selectListView.itemActions();
+    it("derives its actions from the command registration", async () => {
+      const selectList = await openPalette();
+      const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
+      await selectList.selectItem(item);
+      const actions = selectList.getAvailableActions();
       const byCommand = new Map(actions.map((action) => [action.command, action]));
 
       const runSelected = byCommand.get("command-palette:run-selected-command");
@@ -363,7 +377,7 @@ describe("command-palette", () => {
       );
       expect(toggleHidden.keystrokes).toEqual(["ctrl-h"]);
       // It changes what the list shows rather than acting on the selected row.
-      expect(toggleHidden.scope).toBe("list");
+      expect(toggleHidden.context).toBe("dialog");
 
       const toggleDescriptions = byCommand.get("command-palette:toggle-descriptions");
       expect(toggleDescriptions.name).toBe("Toggle Descriptions");
@@ -371,7 +385,7 @@ describe("command-palette", () => {
         "Show each command's description, and match the query against it.",
       );
       expect(toggleDescriptions.keystrokes).toEqual(["ctrl-d"]);
-      expect(toggleDescriptions.scope).toBe("list");
+      expect(toggleDescriptions.context).toBe("dialog");
 
       // Every action explains itself with more than a restated title.
       for (const action of actions) {
@@ -389,15 +403,15 @@ describe("command-palette", () => {
 
     it("keeps clear recent available without a match while history exists", async () => {
       const selectList = await openPalette();
-      palette.recentlyUsed = ["command-palette-spec:noop"];
+      await selectList.setRecentItemIds(["command-palette-spec:noop"]);
       selectList.getQueryEditor().setText("no-command-can-match-this-query-zzyzx");
       await lumine.views.getNextUpdatePromise();
 
-      const actions = selectList.itemActions();
+      const actions = selectList.getAvailableActions();
       const byCommand = new Map(actions.map((action) => [action.command, action]));
-      expect(selectList.getSelectedItem()).toBeUndefined();
+      expect(selectList.getSelectedItem()).toBeNull();
       expect(byCommand.has("command-palette:run-selected-command")).toBe(false);
-      expect(byCommand.get("command-palette:clear-recent").scope).toBe("list");
+      expect(byCommand.get("select-list:clear-recents").context).toBe("dialog");
       expect(byCommand.has("command-palette:toggle-hidden-commands")).toBe(true);
       expect(byCommand.has("command-palette:toggle-descriptions")).toBe(true);
     });
@@ -406,22 +420,16 @@ describe("command-palette", () => {
       await openPalette();
       expect(listedCommandNames()).toContain("command-palette-spec:noop");
 
-      await palette.selectListView.showItemActions();
+      await palette.selectListView.showActions();
 
-      const actionsList = palette.selectListView.itemActionsList;
-      expect(actionsList.isVisible()).toBe(true);
+      const actionsList = workspaceElement.querySelector(".select-list-actions");
+      expect(actionsList).not.toBeNull();
       expect(lumine.workspace.getModalTrail()).toEqual(["Commands", "Actions"]);
-      // The actions list wears the package class, so its styling applies there.
-      expect(actionsList.element.classList.contains("command-palette")).toBe(true);
+      expect(actionsList.classList.contains("command-palette")).toBe(false);
 
-      const index = actionsList.items.findIndex(
-        (item) => item.command === "command-palette:toggle-hidden-commands",
-      );
-      actionsList.selectIndex(index);
-      actionsList.confirmSelection();
+      await lumine.commands.dispatch(actionsList, "command-palette:toggle-hidden-commands");
 
       expect(palette.selectListView.isVisible()).toBe(true);
-      expect(actionsList.isVisible()).toBe(false);
       expect(palette.showHiddenCommands).toBe(true);
       await lumine.views.getNextUpdatePromise();
       const names = listedCommandNames();
@@ -429,25 +437,21 @@ describe("command-palette", () => {
       expect(names).not.toContain("command-palette-spec:noop");
     });
 
-    // `runItemAction` re-shows the palette before dispatching, so this is the
-    // path that would break if the description reset ran on every show.
+    // Returning from the shared action picker resumes the palette instead of
+    // opening it afresh, so display state must survive that round trip.
     it("shows the descriptions when run from the actions list", async () => {
       await openPalette();
-      await palette.selectListView.showItemActions();
+      await palette.selectListView.showActions();
 
-      const actionsList = palette.selectListView.itemActionsList;
-      const index = actionsList.items.findIndex(
-        (item) => item.command === "command-palette:toggle-descriptions",
-      );
-      actionsList.selectIndex(index);
-      actionsList.confirmSelection();
+      const actionsList = workspaceElement.querySelector(".select-list-actions");
+      await lumine.commands.dispatch(actionsList, "command-palette:toggle-descriptions");
 
       expect(palette.showDescriptions).toBe(true);
       await lumine.views.getNextUpdatePromise();
       expect(
-        palette.selectListView.element.querySelector(
-          "li[data-event-name='command-palette-spec:noop'] .secondary-line",
-        ),
+        palette.selectListView
+          .getElement()
+          .querySelector("li[data-event-name='command-palette-spec:noop'] .secondary-line"),
       ).not.toBeNull();
     });
 
@@ -455,11 +459,11 @@ describe("command-palette", () => {
       const selectListView = await openPalette();
       const queryElement = selectListView.getQueryEditor().element;
 
-      lumine.commands.dispatch(queryElement, "command-palette:toggle-hidden-commands");
+      await lumine.commands.dispatch(queryElement, "command-palette:toggle-hidden-commands");
       await lumine.views.getNextUpdatePromise();
       expect(listedCommandNames()).toContain("command-palette-spec:hidden");
 
-      lumine.commands.dispatch(queryElement, "command-palette:toggle-hidden-commands");
+      await lumine.commands.dispatch(queryElement, "command-palette:toggle-hidden-commands");
       await lumine.views.getNextUpdatePromise();
       const names = listedCommandNames();
       expect(names).toContain("command-palette-spec:noop");
