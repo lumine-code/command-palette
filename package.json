@@ -35,13 +35,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "activationCommands": {
-    "lumine-workspace": [
-      "command-palette:toggle",
-      "command-palette:show-hidden-commands",
-      "command-palette:clear-recent"
-    ]
-  },
   "configSchema": {
     "recentCount": {
       "title": "Number of Recent Items",
