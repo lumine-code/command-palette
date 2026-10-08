@@ -2,6 +2,8 @@
 
 Find and run available commands with fuzzy search.
 
+Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/command-palette`).
+
 The palette lists every command available for the focused element, so it always reflects the current context of the workspace.
 
 ## Features
