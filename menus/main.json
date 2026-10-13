@@ -8,7 +8,9 @@
           "submenu": [
             {
               "label": "Command Palette",
-              "command": "command-palette:toggle"
+              "command": "command-palette:toggle",
+              "group": "panels",
+              "order": 10
             }
           ]
         }
