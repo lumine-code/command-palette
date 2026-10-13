@@ -4,8 +4,13 @@
       "label": "View",
       "submenu": [
         {
-          "label": "Toggle Command Palette",
-          "command": "command-palette:toggle"
+          "label": "Toggle View",
+          "submenu": [
+            {
+              "label": "Command Palette",
+              "command": "command-palette:toggle"
+            }
+          ]
         }
       ]
     },
