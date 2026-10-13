@@ -2,9 +2,10 @@
   "title": "command-palette",
   "description": "Search the editor command palette.",
   "recordedOn": "2026-10-13",
-  "sourceRevision": "54130267cd36979da1eaf822e04a12b9f9ad91a7",
+  "sourceRevision": "37b41721f79f00f9fbef1a8d40f3a9bfe961681e",
   "mode": "normal",
   "fontSettings": "default",
+  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
   "images": [
     {
       "file": "demo.png",
