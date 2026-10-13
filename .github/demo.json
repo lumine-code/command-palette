@@ -1,0 +1,16 @@
+{
+  "title": "command-palette",
+  "description": "Search the editor command palette.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "54130267cd36979da1eaf822e04a12b9f9ad91a7",
+  "mode": "normal",
+  "fontSettings": "default",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Search the editor command palette.",
+      "width": 1100,
+      "height": 720
+    }
+  ]
+}

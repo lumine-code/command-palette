@@ -15,6 +15,8 @@ The palette lists every command available for the focused element, so it always 
 - **Hidden commands**: inspect commands excluded from the palette on demand.
 - **Descriptions on demand**: the list opens on the names alone and explains them when asked.
 
+![Search the editor command palette.](.github/demo.png)
+
 ## Installation
 
 To install `command-palette` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/command-palette`.
