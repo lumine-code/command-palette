@@ -4,15 +4,10 @@
       "label": "View",
       "submenu": [
         {
-          "label": "Toggle View",
-          "submenu": [
-            {
-              "label": "Command Palette",
-              "command": "command-palette:toggle",
-              "group": "panels",
-              "order": 10
-            }
-          ]
+          "label": "Command Palette",
+          "command": "command-palette:toggle",
+          "group": "commands",
+          "order": 10
         }
       ]
     },
