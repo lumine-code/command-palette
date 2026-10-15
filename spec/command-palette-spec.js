@@ -1,4 +1,5 @@
 describe("command-palette", () => {
+  const primary = process.platform === "darwin" ? "cmd" : "ctrl";
   let workspaceElement, mainModule, palette, commandDisposables;
 
   beforeEach(async () => {
@@ -201,14 +202,14 @@ describe("command-palette", () => {
       expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
     });
 
-    it("is bound to ctrl-d inside the palette", async () => {
+    it("keeps its description chord inside the palette", async () => {
       const selectList = await openPalette();
       const bindings = lumine.keymaps.findKeyBindings({
         target: selectList.getQueryEditor().element,
         command: "command-palette:toggle-descriptions",
       });
 
-      expect(bindings.map((binding) => binding.keystrokes)).toContain("ctrl-d");
+      expect(bindings.map((binding) => binding.keystrokes)).toContain(`${primary}-k d`);
     });
   });
 
@@ -379,7 +380,7 @@ describe("command-palette", () => {
       expect(toggleHidden.description).toBe(
         "Include the commands hidden from the palette by their packages.",
       );
-      expect(toggleHidden.keystrokes).toEqual(["ctrl-h"]);
+      expect(toggleHidden.keystrokes).toEqual([`${primary}-k shift-d`]);
       // It changes what the list shows rather than acting on the selected row.
       expect(toggleHidden.context).toBe("dialog");
 
@@ -388,7 +389,7 @@ describe("command-palette", () => {
       expect(toggleDescriptions.description).toBe(
         "Show each command's description, and match the query against it.",
       );
-      expect(toggleDescriptions.keystrokes).toEqual(["ctrl-d"]);
+      expect(toggleDescriptions.keystrokes).toEqual([`${primary}-k d`]);
       expect(toggleDescriptions.context).toBe("dialog");
 
       // Every action explains itself with more than a restated title.
