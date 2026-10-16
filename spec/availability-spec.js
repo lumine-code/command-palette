@@ -74,9 +74,10 @@ describe("command palette availability", () => {
     await palette.selectList.setQuery("Conditional Palette Operation");
     const confirm = spyOn(palette.selectList, "confirmSelection").and.callThrough();
     row().click();
-    expect(confirm).toHaveBeenCalledTimes(1);
-    const result = await confirm.calls.mostRecent().returnValue;
-    expect(result.status).toBe("disabled");
+    expect(confirm).not.toHaveBeenCalled();
+    expect(lumine.commands.canDispatch(palette.selectList.getElement(), "core:confirm")).toBe(
+      false,
+    );
     expect(palette.selectListHost.isVisible()).toBe(true);
     expect(palette.selectList.getStatus()).toBeNull();
     await palette.selectListHost.showActions();
