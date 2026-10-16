@@ -142,6 +142,22 @@ describe("command palette availability", () => {
     expect(palette.selectList.getRecentItemIds()).toEqual([]);
   });
 
+  it("greys saved-target rows after their opener is detached", async () => {
+    registrations.push(
+      lumine.commands.add("button", name, { isAvailable: () => enabled, didDispatch: handler }),
+    );
+    enabled = true;
+    await palette.selectList.reload();
+    expect(command().enabled).toBe(true);
+    target.remove();
+    lumine.commands.invalidateAvailability();
+    await flushMicrotasks();
+    await palette.selectList.reload();
+    expect(command().enabled).toBe(false);
+    expect(row().getAttribute("aria-disabled")).toBe("true");
+    expect(palette.isCommandEnabled(command())).toBe(false);
+  });
+
   it("does not close or record the command when availability changes at Run dispatch", async () => {
     enabled = true;
     await palette.selectList.reload();
