@@ -214,7 +214,7 @@ describe("command-palette", () => {
   });
 
   describe("recently used commands", () => {
-    it("records confirmed commands and serializes them", async () => {
+    it("persists confirmed commands in global storage", async () => {
       const selectList = await openPalette();
       const item = palette.commands.find((command) => command.name === "command-palette-spec:noop");
       expect(item).toBeDefined();
@@ -222,7 +222,7 @@ describe("command-palette", () => {
       await selectList.confirmSelection();
 
       expect(selectList.getRecentItemIds()[0]).toBe("command-palette-spec:noop");
-      expect(mainModule.serialize()).toEqual({ recentlyUsed: ["command-palette-spec:noop"] });
+      expect(mainModule.globalState.get("recentCommands")).toEqual(["command-palette-spec:noop"]);
     });
 
     it("dispatches the confirmed command on the previously focused element", async () => {
@@ -331,41 +331,31 @@ describe("command-palette", () => {
       expect(selectList.getRecentItemIds()).toEqual([]);
     });
 
-    it("restores active package state before constructing the palette", async () => {
+    it("reads global history before constructing the palette", async () => {
       await lumine.packages.deactivatePackage("command-palette");
       mainModule = (await lumine.packages.activatePackage("command-palette")).mainModule;
       expect(mainModule.list).toBeNull();
 
       const recentlyUsed = ["command-palette-spec:noop", "command-palette:toggle"];
-      await lumine.packages.restoreActivePackageStates({
-        "command-palette": { recentlyUsed },
-      });
+      await mainModule.globalState.update("recentCommands", recentlyUsed);
 
       expect(mainModule.list).toBeNull();
-      expect(mainModule.serialize()).toEqual({ recentlyUsed });
+      expect(mainModule.globalState.get("recentCommands")).toEqual(recentlyUsed);
       palette = mainModule.ensureList();
       const selectList = await openPalette();
       expect(selectList.getRecentItemIds()).toEqual(recentlyUsed);
       expect(listedCommandNames().slice(0, 2)).toEqual(recentlyUsed);
     });
 
-    it("restores the existing palette through project deserialization and retains that history on use", async () => {
+    it("updates an existing palette when global history changes and retains it on use", async () => {
       const selectList = await openPalette();
       const item = selectList
         .getItems()
         .find((command) => command.name === "command-palette-spec:noop");
       await selectList.recordRecentItem(item);
-      const snapshot = lumine.serialize();
       const recentlyUsed = ["command-palette:toggle"];
-
-      await lumine.deserialize(
-        {
-          packageStates: { "command-palette": { recentlyUsed } },
-          uriHistory: snapshot.uriHistory,
-          fullScreen: snapshot.fullScreen,
-        },
-        { preservePackageState: true },
-      );
+      await mainModule.globalState.update("recentCommands", recentlyUsed);
+      await lumine.views.getNextUpdatePromise();
 
       expect(lumine.packages.getActivePackage("command-palette").mainModule).toBe(mainModule);
       expect(mainModule.list).toBe(palette);
@@ -373,42 +363,43 @@ describe("command-palette", () => {
       expect(listedCommandNames()[0]).toBe("command-palette:toggle");
       await selectList.selectItemById("command-palette-spec:noop");
       await selectList.confirmSelection();
-      expect(mainModule.serialize()).toEqual({
-        recentlyUsed: ["command-palette-spec:noop", "command-palette:toggle"],
-      });
+      expect(mainModule.globalState.get("recentCommands")).toEqual([
+        "command-palette-spec:noop",
+        "command-palette:toggle",
+      ]);
     });
 
-    it("clears the outgoing history when the restored project has no palette state", async () => {
+    it("clears the existing palette when global history is removed", async () => {
       const selectList = await openPalette();
       await selectList.recordRecentItem(
         selectList.getItems().find((command) => command.name === "command-palette-spec:noop"),
       );
 
-      await lumine.packages.restoreActivePackageStates({});
+      await mainModule.globalState.update("recentCommands", undefined);
 
       expect(selectList.getRecentItemIds()).toEqual([]);
-      expect(mainModule.serialize()).toEqual({ recentlyUsed: [] });
+      expect(mainModule.globalState.get("recentCommands", [])).toEqual([]);
     });
 
-    it("keeps serialized snapshots stable across clearing, use, and package reactivation", async () => {
+    it("retains global history across package reactivation without mutating previous reads", async () => {
       const selectList = await openPalette();
       await selectList.recordRecentItem(
         selectList.getItems().find((command) => command.name === "command-palette-spec:noop"),
       );
-      const snapshot = mainModule.serialize();
+      const snapshot = mainModule.globalState.get("recentCommands");
 
       await selectList.clearRecentItems();
       await selectList.recordRecentItem(
         selectList.getItems().find((command) => command.name === "command-palette:toggle"),
       );
-      expect(snapshot).toEqual({ recentlyUsed: ["command-palette-spec:noop"] });
+      expect(snapshot).toEqual(["command-palette-spec:noop"]);
 
       await lumine.packages.deactivatePackage("command-palette");
       mainModule = (await lumine.packages.activatePackage("command-palette")).mainModule;
-      expect(mainModule.serialize()).toEqual({ recentlyUsed: ["command-palette:toggle"] });
+      expect(mainModule.globalState.get("recentCommands")).toEqual(["command-palette:toggle"]);
       palette = mainModule.ensureList();
       expect(palette.selectList.getRecentItemIds()).toEqual(["command-palette:toggle"]);
-      expect(snapshot).toEqual({ recentlyUsed: ["command-palette-spec:noop"] });
+      expect(snapshot).toEqual(["command-palette-spec:noop"]);
     });
   });
 

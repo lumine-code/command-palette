@@ -10,7 +10,7 @@ The palette lists every command available for the focused element, so it always 
 
 - **Fuzzy search**: filter commands by name and tags with fuzzy matching.
 - **Availability**: commands remain searchable and appear grey when their current conditions prevent execution.
-- **Recent commands**: recently used commands stay on top of the list while the query is empty and are shared between editor windows.
+- **Recent commands**: recently used commands stay on top of the list while the query is empty and are remembered across windows, projects and restarts.
 - **Keybinding hints**: each command shows its current keybindings for the focused element.
 - **Local palettes**: each editor window has an independent palette that retains its original command target.
 - **Hidden commands**: inspect commands excluded from the palette on demand.

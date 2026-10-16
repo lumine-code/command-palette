@@ -42,14 +42,13 @@ describe("window-local command palettes", () => {
     expect(other.getText()).toBe("local");
     expect(local.selectList.getRecentItemIds()).toEqual([name]);
     expect(remote.selectList.getRecentItemIds()).toEqual([name]);
-    expect(module.serialize()).toEqual({ recentlyUsed: [name] });
+    expect(module.globalState.get("recentCommands")).toEqual([name]);
     const recentlyUsed = ["command-palette:toggle", name];
-    await lumine.packages.restoreActivePackageStates({
-      "command-palette": { recentlyUsed },
-    });
+    await module.globalState.update("recentCommands", recentlyUsed);
+    await lumine.views.getNextUpdatePromise();
     expect(local.selectList.getRecentItemIds()).toEqual(recentlyUsed);
     expect(remote.selectList.getRecentItemIds()).toEqual(recentlyUsed);
-    expect(module.serialize()).toEqual({ recentlyUsed });
+    expect(module.globalState.get("recentCommands")).toEqual(recentlyUsed);
     await lumine.commands.dispatch(extra.getElement(), "command-palette:clear-recent");
     expect(local.selectList.getRecentItemIds()).toEqual([]);
     expect(remote.selectList.getRecentItemIds()).toEqual([]);
