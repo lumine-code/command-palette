@@ -331,11 +331,84 @@ describe("command-palette", () => {
       expect(selectList.getRecentItemIds()).toEqual([]);
     });
 
-    it("restores recently used commands from serialized state", async () => {
-      const CommandPalette = require("../lib/list");
-      const restored = new CommandPalette(["command-palette-spec:noop"]);
-      expect(restored.selectList.getRecentItemIds()).toEqual(["command-palette-spec:noop"]);
-      await restored.destroy();
+    it("restores active package state before constructing the palette", async () => {
+      await lumine.packages.deactivatePackage("command-palette");
+      mainModule = (await lumine.packages.activatePackage("command-palette")).mainModule;
+      expect(mainModule.list).toBeNull();
+
+      const recentlyUsed = ["command-palette-spec:noop", "command-palette:toggle"];
+      await lumine.packages.restoreActivePackageStates({
+        "command-palette": { recentlyUsed },
+      });
+
+      expect(mainModule.list).toBeNull();
+      expect(mainModule.serialize()).toEqual({ recentlyUsed });
+      palette = mainModule.ensureList();
+      const selectList = await openPalette();
+      expect(selectList.getRecentItemIds()).toEqual(recentlyUsed);
+      expect(listedCommandNames().slice(0, 2)).toEqual(recentlyUsed);
+    });
+
+    it("restores the existing palette through project deserialization and retains that history on use", async () => {
+      const selectList = await openPalette();
+      const item = selectList
+        .getItems()
+        .find((command) => command.name === "command-palette-spec:noop");
+      await selectList.recordRecentItem(item);
+      const snapshot = lumine.serialize();
+      const recentlyUsed = ["command-palette:toggle"];
+
+      await lumine.deserialize(
+        {
+          packageStates: { "command-palette": { recentlyUsed } },
+          uriHistory: snapshot.uriHistory,
+          fullScreen: snapshot.fullScreen,
+        },
+        { preservePackageState: true },
+      );
+
+      expect(lumine.packages.getActivePackage("command-palette").mainModule).toBe(mainModule);
+      expect(mainModule.list).toBe(palette);
+      expect(selectList.getRecentItemIds()).toEqual(recentlyUsed);
+      expect(listedCommandNames()[0]).toBe("command-palette:toggle");
+      await selectList.selectItemById("command-palette-spec:noop");
+      await selectList.confirmSelection();
+      expect(mainModule.serialize()).toEqual({
+        recentlyUsed: ["command-palette-spec:noop", "command-palette:toggle"],
+      });
+    });
+
+    it("clears the outgoing history when the restored project has no palette state", async () => {
+      const selectList = await openPalette();
+      await selectList.recordRecentItem(
+        selectList.getItems().find((command) => command.name === "command-palette-spec:noop"),
+      );
+
+      await lumine.packages.restoreActivePackageStates({});
+
+      expect(selectList.getRecentItemIds()).toEqual([]);
+      expect(mainModule.serialize()).toEqual({ recentlyUsed: [] });
+    });
+
+    it("keeps serialized snapshots stable across clearing, use, and package reactivation", async () => {
+      const selectList = await openPalette();
+      await selectList.recordRecentItem(
+        selectList.getItems().find((command) => command.name === "command-palette-spec:noop"),
+      );
+      const snapshot = mainModule.serialize();
+
+      await selectList.clearRecentItems();
+      await selectList.recordRecentItem(
+        selectList.getItems().find((command) => command.name === "command-palette:toggle"),
+      );
+      expect(snapshot).toEqual({ recentlyUsed: ["command-palette-spec:noop"] });
+
+      await lumine.packages.deactivatePackage("command-palette");
+      mainModule = (await lumine.packages.activatePackage("command-palette")).mainModule;
+      expect(mainModule.serialize()).toEqual({ recentlyUsed: ["command-palette:toggle"] });
+      palette = mainModule.ensureList();
+      expect(palette.selectList.getRecentItemIds()).toEqual(["command-palette:toggle"]);
+      expect(snapshot).toEqual({ recentlyUsed: ["command-palette-spec:noop"] });
     });
   });
 
