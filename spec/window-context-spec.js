@@ -11,6 +11,32 @@ describe("window-local command palettes", () => {
     await lumine.packages.deactivatePackage("command-palette");
     await lumine.workspace.discardEditorWindows();
   });
+  it("keeps different commands recorded concurrently by two palettes", async () => {
+    const names = ["command-palette-spec:first", "command-palette-spec:second"];
+    for (const name of names)
+      registrations.push(lumine.commands.add("lumine-workspace", name, () => {}));
+    await module.globalState.update("recentCommands", []);
+    const extra = await lumine.workspace.openEditorWindow({ show: false });
+    const local = module.ensureList();
+    const remote = module.ensureList(extra);
+    await local.show();
+    await remote.show();
+    await Promise.all([
+      local.selectList.recordRecentItem(
+        local.selectList.getItems().find((item) => item.name === names[0]),
+      ),
+      remote.selectList.recordRecentItem(
+        remote.selectList.getItems().find((item) => item.name === names[1]),
+      ),
+    ]);
+    expect(module.globalState.get("recentCommands")).toEqual(names.slice().reverse());
+    expect(local.selectList.getRecentItemIds()).toEqual(names.slice().reverse());
+    expect(remote.selectList.getRecentItemIds()).toEqual(names.slice().reverse());
+    await local.selectList.removeRecentItem(names[0]);
+    expect(module.globalState.get("recentCommands")).toEqual([names[1]]);
+    await remote.selectList.clearRecentItems();
+    expect(module.globalState.get("recentCommands")).toEqual([]);
+  });
   it("opens concurrent local palettes and runs commands on their original targets", async () => {
     const workspace = lumine.workspace;
     const main = workspace.getMainWindow();
