@@ -149,6 +149,126 @@ describe("command-palette", () => {
     });
   });
 
+  describe("live command updates", () => {
+    it("keeps the latest catalogue when a command is registered during the opening load", async () => {
+      const loadCommands = palette.loadCommands.bind(palette);
+      let firstLoad = true;
+      spyOn(palette, "loadCommands").and.callFake(() => {
+        const commands = loadCommands();
+        if (firstLoad) {
+          firstLoad = false;
+          queueMicrotask(() => {
+            commandDisposables.push(
+              lumine.commands.add("lumine-workspace", "command-palette-spec:during-open", () => {}),
+            );
+          });
+        }
+        return commands;
+      });
+
+      await openPalette();
+      await flushMicrotasks();
+      await lumine.views.getNextUpdatePromise();
+
+      expect(listedCommandNames()).toContain("command-palette-spec:during-open");
+      expect(palette.selectList.isLoading()).toBe(false);
+    });
+
+    it("leaves unchanged presentations and expanded pages intact after availability invalidation", async () => {
+      const commands = Object.fromEntries(
+        Array.from({ length: 120 }, (_, index) => [`pagination-spec:command-${index}`, () => {}]),
+      );
+      commandDisposables.push(lumine.commands.add("lumine-workspace", commands));
+      const selectList = await openPalette();
+      await selectList.setQuery("pagination-spec");
+      await selectList.showMore();
+      await selectList.selectItemById("pagination-spec:command-119");
+      const names = listedCommandNames();
+      const firstRow = selectList.getElement().querySelector("li[data-event-name]");
+      const setItems = spyOn(selectList, "setItems").and.callThrough();
+      const setLoading = spyOn(selectList, "setLoadingState").and.callThrough();
+      expect(names.length).toBe(120);
+
+      for (let index = 0; index < 3; index++) {
+        lumine.commands.invalidateAvailability();
+        await flushMicrotasks();
+      }
+
+      expect(listedCommandNames()).toEqual(names);
+      expect(selectList.getElement().querySelector("li[data-event-name]")).toBe(firstRow);
+      expect(selectList.getSelectedItem().name).toBe("pagination-spec:command-119");
+      expect(setItems).not.toHaveBeenCalled();
+      expect(setLoading).not.toHaveBeenCalled();
+    });
+
+    it("refreshes repeated availability changes without loading or losing the current query and selection", async () => {
+      let available = true;
+      commandDisposables.push(
+        lumine.commands.add("lumine-workspace", "command-palette-spec:conditional", {
+          isAvailable: () => available,
+          didDispatch() {},
+        }),
+      );
+      const selectList = await openPalette();
+      await selectList.setQuery("palette-spec");
+      await selectList.selectItemById("command-palette-spec:conditional");
+      const setLoading = spyOn(selectList, "setLoadingState").and.callThrough();
+      const target = palette.activeElement;
+
+      for (const value of [false, true, false, true]) {
+        available = value;
+        lumine.commands.invalidateAvailability();
+        await lumine.views.getNextUpdatePromise();
+
+        const row = selectList
+          .getElement()
+          .querySelector("li[data-event-name='command-palette-spec:conditional']");
+        expect(row.classList.contains("disabled")).toBe(!value);
+        expect(selectList.getQuery()).toBe("palette-spec");
+        expect(selectList.getSelectedItem().name).toBe("command-palette-spec:conditional");
+        expect(palette.activeElement).toBe(target);
+        expect(selectList.isLoading()).toBe(false);
+        expect(selectList.getElement().querySelector(".loading-message")).toBeNull();
+      }
+
+      expect(setLoading).not.toHaveBeenCalled();
+    });
+
+    it("adds and removes commands in the visible catalogue without showing loading", async () => {
+      const selectList = await openPalette();
+      await selectList.setQuery("palette-spec");
+      await selectList.selectItemById("command-palette-spec:noop");
+      const setLoading = spyOn(selectList, "setLoadingState").and.callThrough();
+      const registration = lumine.commands.add(
+        "lumine-workspace",
+        "command-palette-spec:late-command",
+        () => {},
+      );
+      commandDisposables.push(registration);
+      await lumine.views.getNextUpdatePromise();
+
+      expect(listedCommandNames()).toContain("command-palette-spec:late-command");
+      expect(selectList.getSelectedItem().name).toBe("command-palette-spec:noop");
+      registration.dispose();
+      await lumine.views.getNextUpdatePromise();
+
+      expect(listedCommandNames()).not.toContain("command-palette-spec:late-command");
+      expect(selectList.getQuery()).toBe("palette-spec");
+      expect(selectList.getSelectedItem().name).toBe("command-palette-spec:noop");
+      expect(setLoading).not.toHaveBeenCalled();
+    });
+
+    it("ignores availability changes belonging to another command subtree", async () => {
+      await openPalette();
+      const presentations = spyOn(lumine.commands, "getCommandPresentations").and.callThrough();
+
+      lumine.commands.invalidateAvailability({ target: palette.selectList.getElement() });
+      await flushMicrotasks();
+
+      expect(presentations).not.toHaveBeenCalled();
+    });
+  });
+
   describe("command-palette:toggle-descriptions", () => {
     const NOOP_SECONDARY = "li[data-event-name='command-palette-spec:noop'] .secondary-line";
 

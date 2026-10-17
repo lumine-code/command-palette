@@ -91,12 +91,9 @@ describe("command palette availability", () => {
 
   it("refreshes invalidated availability while preserving the original command target", async () => {
     await palette.selectList.setQuery("Conditional Palette Operation");
-    const reload = spyOn(palette.selectList, "reload").and.callThrough();
     enabled = true;
     lumine.commands.invalidateAvailability();
-    await Promise.resolve();
-    expect(reload).toHaveBeenCalledTimes(1);
-    await reload.calls.mostRecent().returnValue;
+    await flushMicrotasks();
     expect(command()?.enabled).toBe(true);
     await lumine.views.getNextUpdatePromise();
 
@@ -203,12 +200,12 @@ describe("command palette availability", () => {
   });
   it("ignores local palette state changes while observing the saved opener subtree", async () => {
     await flushMicrotasks();
-    const reload = spyOn(palette.selectList, "reload").and.callThrough();
+    const presentations = spyOn(lumine.commands, "getCommandPresentations").and.callThrough();
     lumine.commands.invalidateAvailability({ target: palette.selectList.getElement() });
     await flushMicrotasks();
-    expect(reload).not.toHaveBeenCalled();
+    expect(presentations).not.toHaveBeenCalled();
     lumine.commands.invalidateAvailability({ target });
     await flushMicrotasks();
-    expect(reload).toHaveBeenCalledTimes(1);
+    expect(presentations).toHaveBeenCalledTimes(1);
   });
 });
