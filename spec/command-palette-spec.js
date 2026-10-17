@@ -364,6 +364,37 @@ describe("command-palette", () => {
       expect(dispatched).toBe(true);
     });
 
+    it("repeats commands against the captured editor after another document becomes active", async () => {
+      const target = await lumine.workspace.open();
+      const other = await lumine.workspace.open();
+      const events = [];
+      commandDisposables.push(
+        lumine.commands.add(target.element, "command-palette-spec:repeat", {
+          didDispatch: async (event) => {
+            events.push(event.target);
+            await lumine.workspace.open(other);
+          },
+        }),
+      );
+      await lumine.workspace.open(target);
+      target.element.focus();
+      await palette.show();
+      const capturedTarget = palette.activeElement;
+      expect(target.element.contains(capturedTarget)).toBe(true);
+      const selectList = palette.selectList;
+      await selectList.setQuery("command palette spec repeat");
+      await selectList.runAction("select-list:toggle-keep-open");
+
+      await selectList.confirmSelection();
+      await selectList.confirmSelection();
+
+      expect(events).toEqual([capturedTarget, capturedTarget]);
+      expect(palette.activeElement).toBe(capturedTarget);
+      expect(palette.selectListHost.isVisible()).toBe(true);
+      expect(selectList.getQuery()).toBe("command palette spec repeat");
+      expect(lumine.workspace.getActivePaneItem()).toBe(other);
+    });
+
     it("runs the selected command through its semantic action exactly once", async () => {
       let dispatchCount = 0;
       commandDisposables.push(

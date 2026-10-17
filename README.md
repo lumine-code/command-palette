@@ -13,6 +13,7 @@ The palette lists every command available for the focused element, so it always 
 - **Recent commands**: recently used commands stay on top of the list while the query is empty and are remembered across windows, projects and restarts.
 - **Keybinding hints**: each command shows its current keybindings for the focused element.
 - **Local palettes**: each editor window has an independent palette that retains its original command target.
+- **Repeated actions**: toggle keep-open mode from Actions or with F12 to run commands against the original target, with an accented frame or shadow marking the mode.
 - **Hidden commands**: inspect commands excluded from the palette on demand.
 - **Descriptions on demand**: the list opens on the names alone and explains them when asked.
 

@@ -15,25 +15,60 @@ module.exports = {
       caption: "Search the editor command palette.",
       timeout: 60000,
       async run(context) {
-        const { lumine, state, waitFor } = context;
-        {
-          lumine.commands.dispatch(lumine.views.getView(state.editor), "command-palette:toggle");
-          await waitFor(
-            () => lumine.workspace.getModalPanels().some((p) => p.isVisible()),
-            "action picker",
-          );
-          const input = lumine.workspace
-            .getModalPanels()
-            .find((p) => p.isVisible())
-            .getElement()
-            .querySelector("lumine-text-editor[mini]");
-          if (!input) throw new Error("Missing picker input");
-          input.getModel().setText("split");
-        }
+        const { lumine, state, command } = context;
+        await command("command-palette:toggle", lumine.views.getView(state.editor));
+        state.palette = lumine.packages.getActivePackage("command-palette").mainModule.list;
+        await state.palette.selectList.setQuery("split");
       },
       ready(context) {
-        const { lumine } = context;
-        return Boolean(lumine.workspace.getModalPanels().some((panel) => panel.isVisible()));
+        const { state } = context;
+        return (
+          state.palette.selectListHost.isVisible() &&
+          state.palette.selectList.getQuery() === "split" &&
+          state.palette.selectList.getFilteredItems().length > 0
+        );
+      },
+    },
+    {
+      id: "keep-open",
+      file: "demo-keep-open.png",
+      caption: "Run repeated commands while the accented palette stays open.",
+      async run({ lumine, state, command, waitFor }) {
+        await state.palette.hide();
+        state.editor.element.focus();
+        await command("command-palette:toggle", state.editor.element);
+        const list = state.palette.selectList;
+        await list.setQuery("toggle soft wrap");
+        const item = list.getItems().find(({ name }) => name === "editor:toggle-soft-wrap");
+        if (!item) throw new Error("The editor's soft-wrap command is unavailable.");
+        await list.selectItem(item);
+        const target = list.getQueryEditor().getElement();
+        const key = new KeyboardEvent("keydown", {
+          key: "F12",
+          code: "F12",
+          bubbles: true,
+          cancelable: true,
+        });
+        Object.defineProperty(key, "target", { value: target });
+        lumine.keymaps.handleKeyboardEvent(key);
+        await waitFor(() => list.isKeepOpen() && !list.isActionPending(), "keep-open action");
+        const initiallyWrapped = state.editor.isSoftWrapped();
+        await list.confirmSelection();
+        if (state.editor.isSoftWrapped() === initiallyWrapped)
+          throw new Error("The palette did not run the first soft-wrap command.");
+        await list.confirmSelection();
+        if (state.editor.isSoftWrapped() !== initiallyWrapped)
+          throw new Error("The palette did not run the second soft-wrap command.");
+        await list.setQuery("");
+      },
+      ready({ state }) {
+        const list = state.palette.selectList;
+        return (
+          state.palette.selectListHost.isVisible() &&
+          list.isKeepOpen() &&
+          list.getRecentItemIds()[0] === "editor:toggle-soft-wrap" &&
+          list.getQuery() === ""
+        );
       },
     },
   ],
