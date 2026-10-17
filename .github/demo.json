@@ -1,18 +1,18 @@
 {
   "title": "command-palette",
   "description": "Search the editor command palette.",
-  "recordedOn": "2026-10-14",
-  "sourceRevision": "c51bb1de08cd125b5197ebd544be91f4c824b371",
-  "themeSourceRevision": "14a69683b0e3238e2bc128fbfae3866c1e4ee9c6",
+  "recordedOn": "2026-10-17",
+  "sourceRevision": "31a08967acb2e29a28c246028eabcb83f873e014",
+  "themeSourceRevision": "754c03b6a2df350ec6e37d415aa965d9630809f7",
   "mode": "normal",
   "fontSettings": "default",
   "scenario": "demo.js",
-  "recipeHash": "dbd6d4276f6601dd6928aaa5f8ca4df852ed1a117d89f01d6519ceba35b14cf2",
+  "recipeHash": "14d379628db1320e99b952346d8307570a8cf3a8142fcc3d7f416b155d6a34e7",
   "environment": {
     "platform": "win32",
     "arch": "x64",
-    "electron": "44.7.0",
-    "chrome": "152.0.7977.130",
+    "electron": "44.8.0",
+    "chrome": "152.0.7977.167",
     "devicePixelRatio": 1,
     "locale": "en-GB",
     "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
@@ -21,26 +21,27 @@
   },
   "viewport": { "width": 1100, "height": 720 },
   "cornerRadius": 10,
+  "privacy": { "version": 1, "location": "neutral", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "385bd1b3ac2db600f1c7e077474d9da4d6deebc4",
+      "revision": "f698a46e6a6e82f22dec9d37f4b2cf7095939a27",
       "dirty": true,
-      "workingTreeHash": "0fa935626a1db13861a0b78ef5c3d890e0a6bff80b25da2fac6e9889910defe0"
+      "workingTreeHash": "aa65c5235bbf2323156ba808240561d13a0f6bb098250f9df132031b72c4e1b8"
     },
     "package": {
-      "revision": "c51bb1de08cd125b5197ebd544be91f4c824b371",
-      "dirty": true,
-      "workingTreeHash": "62a752f2a04447fe28fdd905a92bde5e75b87911ae1ac8f6829d6b523ef6bc5b"
+      "revision": "31a08967acb2e29a28c246028eabcb83f873e014",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "command-palette": {
-      "revision": "c51bb1de08cd125b5197ebd544be91f4c824b371",
-      "dirty": true,
-      "workingTreeHash": "62a752f2a04447fe28fdd905a92bde5e75b87911ae1ac8f6829d6b523ef6bc5b"
+      "revision": "31a08967acb2e29a28c246028eabcb83f873e014",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "one-theme": {
-      "revision": "14a69683b0e3238e2bc128fbfae3866c1e4ee9c6",
-      "dirty": true,
-      "workingTreeHash": "50ec2f83a6347dd8113870992ec4eb2be4014f3d9e12213c2f51b543f1eca793"
+      "revision": "754c03b6a2df350ec6e37d415aa965d9630809f7",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
   },
   "fixtures": [
@@ -55,7 +56,14 @@
       "label": "Search the editor command palette.",
       "width": 1100,
       "height": 720,
-      "sha256": "0090b8e0bc19355b01f8f778735ba38d5f3dda02fb5b9d178c205df7a1aeb81d"
+      "sha256": "8b452dada2cb0d0d76d8d338603fd9395102e049ed460d126524b814dcef51dd"
+    },
+    {
+      "file": "demo-keep-open.png",
+      "label": "Run repeated commands while the accented palette stays open.",
+      "width": 1100,
+      "height": 720,
+      "sha256": "a1aa01bf3466dca4d855c30a0b18d554e535535c54288b51ef519ddf16630758"
     }
   ]
 }

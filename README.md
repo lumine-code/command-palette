@@ -19,6 +19,8 @@ The palette lists every command available for the focused element, so it always 
 
 ![Search the editor command palette.](.github/demo.png)
 
+![Run repeated commands while the accented palette stays open.](.github/demo-keep-open.png)
+
 ## Installation
 
 To install `command-palette` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/command-palette`.
