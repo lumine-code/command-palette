@@ -1,9 +1,9 @@
 {
   "title": "command-palette",
   "description": "Search the editor command palette.",
-  "recordedOn": "2026-10-17",
-  "sourceRevision": "31a08967acb2e29a28c246028eabcb83f873e014",
-  "themeSourceRevision": "754c03b6a2df350ec6e37d415aa965d9630809f7",
+  "recordedOn": "2026-10-18",
+  "sourceRevision": "f2d42c36875e661374a93e6046c0090b41a38630",
+  "themeSourceRevision": "45b22049e87256e9327beb0b350e67fe81d7fc81",
   "mode": "normal",
   "fontSettings": "default",
   "scenario": "demo.js",
@@ -11,7 +11,7 @@
   "environment": {
     "platform": "win32",
     "arch": "x64",
-    "electron": "44.8.0",
+    "electron": "44.9.0",
     "chrome": "152.0.7977.167",
     "devicePixelRatio": 1,
     "locale": "en-GB",
@@ -24,22 +24,22 @@
   "privacy": { "version": 1, "location": "neutral", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "f698a46e6a6e82f22dec9d37f4b2cf7095939a27",
-      "dirty": true,
-      "workingTreeHash": "aa65c5235bbf2323156ba808240561d13a0f6bb098250f9df132031b72c4e1b8"
+      "revision": "10950c83cb6d964aadbcf4036af67c6484c1341d",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "package": {
-      "revision": "31a08967acb2e29a28c246028eabcb83f873e014",
+      "revision": "f2d42c36875e661374a93e6046c0090b41a38630",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "command-palette": {
-      "revision": "31a08967acb2e29a28c246028eabcb83f873e014",
+      "revision": "f2d42c36875e661374a93e6046c0090b41a38630",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "one-theme": {
-      "revision": "754c03b6a2df350ec6e37d415aa965d9630809f7",
+      "revision": "45b22049e87256e9327beb0b350e67fe81d7fc81",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
@@ -56,14 +56,14 @@
       "label": "Search the editor command palette.",
       "width": 1100,
       "height": 720,
-      "sha256": "8b452dada2cb0d0d76d8d338603fd9395102e049ed460d126524b814dcef51dd"
+      "sha256": "7a9a36d0c428a628f1149fd155b4a7ac745080659cfe89bd2e9789aaaa4eb594"
     },
     {
       "file": "demo-keep-open.png",
       "label": "Run repeated commands while the accented palette stays open.",
       "width": 1100,
       "height": 720,
-      "sha256": "a1aa01bf3466dca4d855c30a0b18d554e535535c54288b51ef519ddf16630758"
+      "sha256": "565db140ff79c5c028afda871d411e0a08b2fe8a73c168bdf099b315f7926e7e"
     }
   ]
 }
