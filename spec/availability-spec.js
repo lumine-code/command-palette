@@ -96,6 +96,7 @@ describe("command palette availability", () => {
     await flushMicrotasks();
     expect(command()?.enabled).toBe(true);
     await lumine.views.getNextUpdatePromise();
+    await conditionPromise(() => !palette.selectList.isFiltering());
 
     expect(palette.activeElement).toBe(target);
     expect(palette.selectList.getQuery()).toBe("Conditional Palette Operation");

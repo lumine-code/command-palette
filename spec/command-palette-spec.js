@@ -219,6 +219,7 @@ describe("command-palette", () => {
         available = value;
         lumine.commands.invalidateAvailability();
         await lumine.views.getNextUpdatePromise();
+        await conditionPromise(() => !selectList.isFiltering());
 
         const row = selectList
           .getElement()
@@ -246,11 +247,13 @@ describe("command-palette", () => {
       );
       commandDisposables.push(registration);
       await lumine.views.getNextUpdatePromise();
+      await conditionPromise(() => !selectList.isFiltering());
 
       expect(listedCommandNames()).toContain("command-palette-spec:late-command");
       expect(selectList.getSelectedItem().name).toBe("command-palette-spec:noop");
       registration.dispose();
       await lumine.views.getNextUpdatePromise();
+      await conditionPromise(() => !selectList.isFiltering());
 
       expect(listedCommandNames()).not.toContain("command-palette-spec:late-command");
       expect(selectList.getQuery()).toBe("palette-spec");
@@ -299,8 +302,7 @@ describe("command-palette", () => {
 
     it("only matches a description once it is on screen", async () => {
       const selectList = await openPalette();
-      selectList.getQueryEditor().setText("zzyzx");
-      await lumine.views.getNextUpdatePromise();
+      await selectList.setQuery("zzyzx");
       expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
 
       await dispatchToggle();
@@ -317,8 +319,7 @@ describe("command-palette", () => {
       expect(palette.showDescriptions).toBe(false);
       // The candidates dropped the descriptions again, not just the rows: the
       // reset marks the list stale, so reopening rebuilds it.
-      selectList.getQueryEditor().setText("zzyzx");
-      await lumine.views.getNextUpdatePromise();
+      await selectList.setQuery("zzyzx");
       expect(listedCommandNames()).not.toContain("command-palette-spec:noop");
     });
 
@@ -467,8 +468,7 @@ describe("command-palette", () => {
       expect(separator.nextElementSibling.dataset.eventName).toBeTruthy();
       expect(listedCommandNames()[0]).toBe("command-palette-spec:noop");
 
-      selectList.getQueryEditor().setText("noop");
-      await lumine.views.getNextUpdatePromise();
+      await selectList.setQuery("noop");
       expect(selectList.getElement().querySelector(".select-list-separator")).toBeNull();
     });
 
@@ -569,8 +569,7 @@ describe("command-palette", () => {
 
     it("matches spaced display names when the query uses hyphens", async () => {
       const selectList = await openPalette();
-      selectList.getQueryEditor().setText("palette-spec-noop");
-      await lumine.views.getNextUpdatePromise();
+      await selectList.setQuery("palette-spec-noop");
       expect(listedCommandNames()).toEqual(["command-palette-spec:noop"]);
     });
   });
@@ -624,8 +623,7 @@ describe("command-palette", () => {
     it("keeps clear recent available without a match while history exists", async () => {
       const selectList = await openPalette();
       await selectList.setRecentItemIds(["command-palette-spec:noop"]);
-      selectList.getQueryEditor().setText("no-command-can-match-this-query-zzyzx");
-      await lumine.views.getNextUpdatePromise();
+      await selectList.setQuery("no-command-can-match-this-query-zzyzx");
 
       const actions = selectList.getAvailableActions();
       const byCommand = new Map(actions.map((action) => [action.command, action]));
