@@ -218,8 +218,17 @@ describe("command-palette", () => {
       for (const value of [false, true, false, true]) {
         available = value;
         lumine.commands.invalidateAvailability();
-        await lumine.views.getNextUpdatePromise();
-        await conditionPromise(() => !selectList.isFiltering());
+        // Matching settles before the final list render. Observe the row that
+        // changed instead of accepting the earlier non-filtering state.
+        await waitForFrames(
+          () =>
+            !selectList.isFiltering() &&
+            selectList
+              .getElement()
+              .querySelector("li[data-event-name='command-palette-spec:conditional']")
+              ?.classList.contains("disabled") === !value,
+          { description: "the command's updated availability to be rendered" },
+        );
 
         const row = selectList
           .getElement()
@@ -246,14 +255,22 @@ describe("command-palette", () => {
         () => {},
       );
       commandDisposables.push(registration);
-      await lumine.views.getNextUpdatePromise();
-      await conditionPromise(() => !selectList.isFiltering());
+      await waitForFrames(
+        () =>
+          !selectList.isFiltering() &&
+          listedCommandNames().includes("command-palette-spec:late-command"),
+        { description: "the registered command to be rendered in the palette" },
+      );
 
       expect(listedCommandNames()).toContain("command-palette-spec:late-command");
       expect(selectList.getSelectedItem().name).toBe("command-palette-spec:noop");
       registration.dispose();
-      await lumine.views.getNextUpdatePromise();
-      await conditionPromise(() => !selectList.isFiltering());
+      await waitForFrames(
+        () =>
+          !selectList.isFiltering() &&
+          !listedCommandNames().includes("command-palette-spec:late-command"),
+        { description: "the disposed command to leave the rendered palette" },
+      );
 
       expect(listedCommandNames()).not.toContain("command-palette-spec:late-command");
       expect(selectList.getQuery()).toBe("palette-spec");
