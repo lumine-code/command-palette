@@ -202,6 +202,30 @@ describe("command palette asynchronous execution", () => {
     await waitForRecents([firstName, secondName]);
   });
 
+  it("keeps F12 open when a detached command later moves focus", async () => {
+    spyOn(document, "hasFocus").and.returnValue(true);
+    const completion = deferred();
+    let movedFocus = false;
+    register(firstName, async () => {
+      await completion.promise;
+      otherTarget.focus();
+      movedFocus = true;
+    });
+    await show();
+    await selectList.runAction("select-list:toggle-keep-open");
+    await confirm();
+    await waitForRecents([firstName]);
+
+    completion.resolve();
+    await conditionPromise(() => movedFocus);
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+
+    expect(palette.selectListHost.isVisible()).toBe(true);
+    expect(selectList.isKeepOpen()).toBe(true);
+    expect(selectList.getQueryEditor().getElement().contains(document.activeElement)).toBe(true);
+  });
+
   it("reports a synchronous command error through notifications instead of list status", async () => {
     const errors = spyOn(lumine.notifications, "addError");
     register(firstName, () => {
