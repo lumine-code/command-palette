@@ -68,6 +68,7 @@ describe("window-local command palettes", () => {
     expect(other.getText()).toBe("local");
     expect(local.selectList.getRecentItemIds()).toEqual([name]);
     expect(remote.selectList.getRecentItemIds()).toEqual([name]);
+    await conditionPromise(() => module.globalState.get("recentCommands", [])[0] === name);
     expect(module.globalState.get("recentCommands")).toEqual([name]);
     const recentlyUsed = ["command-palette:toggle", name];
     await module.globalState.update("recentCommands", recentlyUsed);

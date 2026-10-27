@@ -6,6 +6,8 @@ Fork of [pulsar-edit/pulsar](https://github.com/pulsar-edit/pulsar) (`packages/c
 
 The palette lists every command available for the focused element, so it always reflects the current context of the workspace.
 
+Choosing a command closes the palette as soon as dispatch is accepted. Commands and recent-history writes finish independently, and execution or history errors appear as notifications. History records accepted invocations even when execution later fails. Keep-open mode retains the original target and lets you dispatch more commands while earlier ones are still running; each command owns its concurrency rules.
+
 ## Features
 
 - **Fuzzy search**: filter commands by name and tags with fuzzy matching.

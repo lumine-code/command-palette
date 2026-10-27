@@ -360,6 +360,9 @@ describe("command-palette", () => {
       await selectList.confirmSelection();
 
       expect(selectList.getRecentItemIds()[0]).toBe("command-palette-spec:noop");
+      await conditionPromise(
+        () => mainModule.globalState.get("recentCommands", [])[0] === "command-palette-spec:noop",
+      );
       expect(mainModule.globalState.get("recentCommands")).toEqual(["command-palette-spec:noop"]);
     });
 
@@ -531,6 +534,9 @@ describe("command-palette", () => {
       expect(listedCommandNames()[0]).toBe("command-palette:toggle");
       await selectList.selectItemById("command-palette-spec:noop");
       await selectList.confirmSelection();
+      await conditionPromise(
+        () => mainModule.globalState.get("recentCommands", [])[0] === "command-palette-spec:noop",
+      );
       expect(mainModule.globalState.get("recentCommands")).toEqual([
         "command-palette-spec:noop",
         "command-palette:toggle",
