@@ -11,6 +11,7 @@
   ".command-palette lumine-text-editor": {
     "cmdorctrl-shift-p": "command-palette:toggle",
     "f1": "command-palette:toggle",
+    "alt-c": "command-palette:copy-command-name",
     "cmdorctrl-k d": "command-palette:toggle-descriptions",
     "cmdorctrl-k shift-d": "command-palette:toggle-hidden-commands"
   }

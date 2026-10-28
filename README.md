@@ -38,7 +38,7 @@ Commands available in `lumine-workspace`:
 Commands available in `.command-palette`:
 
 - `command-palette:run-selected-command`: run the selected command on the element that opened the palette,
-- `command-palette:copy-command-name`: copy the selected command's identifier, such as `core:close`, to the clipboard without closing the palette,
+- `command-palette:copy-command-name`: copy the selected command's identifier, such as `core:close`, to the clipboard and close the palette (`alt-c`),
 - `command-palette:toggle-hidden-commands`: include the commands hidden from the palette by their packages,
 - `command-palette:toggle-descriptions`: show each command's description, and match the query against it,
 - `command-palette:remove-from-recent`: drop the selected command from the recent section, offered only while a recent one is selected.
