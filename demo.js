@@ -53,12 +53,19 @@ module.exports = {
         lumine.keymaps.handleKeyboardEvent(key);
         await waitFor(() => list.isKeepOpen() && !list.isActionPending(), "keep-open action");
         const initiallyWrapped = state.editor.isSoftWrapped();
-        await list.confirmSelection();
-        if (state.editor.isSoftWrapped() === initiallyWrapped)
-          throw new Error("The palette did not run the first soft-wrap command.");
-        await list.confirmSelection();
-        if (state.editor.isSoftWrapped() !== initiallyWrapped)
-          throw new Error("The palette did not run the second soft-wrap command.");
+        const runToggle = async (expected, label) => {
+          await waitFor(
+            () => !list.isFiltering() && !list.isActionPending(),
+            label + " matches ready",
+          );
+          const current = list.getItems().find(({ name }) => name === "editor:toggle-soft-wrap");
+          if (!current) throw new Error("The editor's soft-wrap command is unavailable.");
+          await list.selectItem(current);
+          await list.confirmSelection();
+          await waitFor(() => state.editor.isSoftWrapped() === expected, label + " completed");
+        };
+        await runToggle(!initiallyWrapped, "First soft-wrap command");
+        await runToggle(initiallyWrapped, "Second soft-wrap command");
         await list.setQuery("");
       },
       ready({ state }) {
