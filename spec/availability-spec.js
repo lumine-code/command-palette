@@ -91,12 +91,15 @@ describe("command palette availability", () => {
 
   it("refreshes invalidated availability while preserving the original command target", async () => {
     await palette.selectList.setQuery("Conditional Palette Operation");
+    const setItems = spyOn(palette.selectList, "setItems").and.callThrough();
     enabled = true;
     lumine.commands.invalidateAvailability();
     await flushMicrotasks();
     expect(command()?.enabled).toBe(true);
-    await lumine.views.getNextUpdatePromise();
-    await conditionPromise(() => !palette.selectList.isFiltering());
+    expect(setItems.calls.count()).toBe(1);
+    const completion = setItems.calls.mostRecent().returnValue;
+    expect(typeof completion?.then).toBe("function");
+    await completion;
 
     expect(palette.activeElement).toBe(target);
     expect(palette.selectList.getQuery()).toBe("Conditional Palette Operation");
